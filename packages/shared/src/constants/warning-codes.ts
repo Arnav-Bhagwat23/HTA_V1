@@ -13,3 +13,8 @@ export const WARNING_CODES = [
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];
+
+const WARNING_CODE_SET: ReadonlySet<string> = new Set(WARNING_CODES);
+
+export const isWarningCode = (value: string): value is WarningCode =>
+  WARNING_CODE_SET.has(value);
