@@ -1,9 +1,9 @@
 import { JobStatus, WarningCode } from '@prisma/client';
+import type { NormalizedQuery } from '@hta/shared';
 import { Job } from 'bullmq';
 
 import { prisma } from '../lib/prisma';
 import { normalizeQuery } from '../normalizer/normalize-query';
-import type { NormalizedQuery } from '../../../../packages/shared/src';
 
 export interface ProcessSearchJobData {
   searchJobId: string;

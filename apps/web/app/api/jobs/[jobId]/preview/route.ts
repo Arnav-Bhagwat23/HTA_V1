@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import type { PreviewResponse } from '../../../../../../../packages/shared/src';
+import type { PreviewResponse } from '@hta/shared';
 import { getAuthenticatedUser } from '../../../../../lib/auth';
 import { prisma } from '../../../../../lib/prisma';
 

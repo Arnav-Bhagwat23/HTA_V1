@@ -1,4 +1,4 @@
-import type { NormalizedQuery } from '../../../../packages/shared/src';
+import type { NormalizedQuery } from '@hta/shared';
 
 export const normalizeQuery = (rawQuery: string): NormalizedQuery => {
   const normalizedRawQuery = rawQuery.trim();

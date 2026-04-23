@@ -1,8 +1,8 @@
 import { JobMode, JobStatus, WarningCode } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-import type { SearchResponse } from '../../../../../packages/shared/src';
-import { searchRequestSchema } from '../../../../../packages/shared/src';
+import type { SearchResponse } from '@hta/shared';
+import { searchRequestSchema } from '@hta/shared';
 import { getAuthenticatedUser } from '../../../lib/auth';
 import { prisma } from '../../../lib/prisma';
 import { searchJobsQueue } from '../../../lib/queues/search-jobs';

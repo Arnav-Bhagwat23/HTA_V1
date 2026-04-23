@@ -1,9 +1,6 @@
 import { Worker } from 'bullmq';
 
-import {
-  getRedisConnection,
-  SEARCH_JOBS_QUEUE,
-} from '../../../../packages/shared/src';
+import { getRedisConnection, SEARCH_JOBS_QUEUE } from '@hta/shared';
 import { processSearchJob } from './jobs/process-search.job';
 
 const worker = new Worker(SEARCH_JOBS_QUEUE, processSearchJob, {

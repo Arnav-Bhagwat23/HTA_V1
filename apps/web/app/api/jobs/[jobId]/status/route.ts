@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import type { JobState } from '../../../../../../../packages/shared/src';
+import type { JobState } from '@hta/shared';
 import { getAuthenticatedUser } from '../../../../../lib/auth';
 import { prisma } from '../../../../../lib/prisma';
 
