@@ -31,6 +31,14 @@ enum JobMode {
   MANUAL_UPLOAD
 }
 
+enum JobSourceStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
 enum GeographyCode {
   DE
   FR
@@ -132,11 +140,14 @@ model JobSource {
   jobId               String
   sourceKey           String
   sourceLabel         String
+  sourceCountry       GeographyCode?
   sourceType          SourceType
-  status              JobStatus?
+  status              JobSourceStatus       @default(PENDING)
   errorCode           WarningCode?
   errorMessage        String?
   searchedAt          DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   job                 SearchJob             @relation(fields: [jobId], references: [id], onDelete: Cascade)
@@ -144,30 +155,36 @@ model JobSource {
 
   @@index([jobId])
   @@index([sourceKey])
+  @@index([status, createdAt])
+  @@index([sourceCountry, createdAt])
 }
 
 model DocumentConsidered {
-  id                 String                @id @default(uuid())
-  jobId              String
-  jobSourceId        String?
-  documentId         String
-  title              String
-  sourceUrl          String?
-  sourceCountry      GeographyCode?
-  sourceType         SourceType
-  publishedAt        DateTime?
-  wasSelected        Boolean               @default(false)
-  relevanceRank      Int?
-  recencyRank        Int?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-  job                SearchJob             @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobSource          JobSource?            @relation(fields: [jobSourceId], references: [id], onDelete: SetNull)
-  fieldExtractions   FieldExtraction[]
+  id                String                @id @default(uuid())
+  jobId             String
+  jobSourceId       String?
+  documentTitle     String
+  documentUrl       String?
+  sourceType        SourceType
+  sourceCountry     GeographyCode?
+  publishedAt       DateTime?
+  isSelected        Boolean               @default(false)
+  selectionRank     Int?
+  parseStatus       ParseStatus           @default(PENDING)
+  warningCode       WarningCode?
+  warningMessage    String?
+  rawTextPath       String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  job               SearchJob             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobSource         JobSource?            @relation(fields: [jobSourceId], references: [id], onDelete: SetNull)
+  fieldExtractions  FieldExtraction[]
 
   @@index([jobId])
   @@index([jobSourceId])
-  @@index([documentId])
+  @@index([isSelected, createdAt])
+  @@index([sourceCountry, createdAt])
+  @@index([parseStatus, createdAt])
 }
 
 model UploadedDocument {
@@ -178,18 +195,23 @@ model UploadedDocument {
   localTempPath    String
   uploadSize       Int
   parseStatus      ParseStatus  @default(PENDING)
+  warningCode      WarningCode?
+  warningMessage   String?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   job              SearchJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  fieldExtractions FieldExtraction[]
 
   @@index([jobId])
-  @@index([parseStatus])
+  @@index([jobId, createdAt])
+  @@index([parseStatus, createdAt])
 }
 
 model FieldExtraction {
   id                   String                @id @default(uuid())
   jobId                String
   documentConsideredId String?
+  uploadedDocumentId   String?
   fieldName            String
   fieldLabel           String
   value                String?
@@ -201,9 +223,11 @@ model FieldExtraction {
   updatedAt            DateTime              @updatedAt
   job                  SearchJob             @relation(fields: [jobId], references: [id], onDelete: Cascade)
   documentConsidered   DocumentConsidered?   @relation(fields: [documentConsideredId], references: [id], onDelete: SetNull)
+  uploadedDocument     UploadedDocument?     @relation(fields: [uploadedDocumentId], references: [id], onDelete: SetNull)
 
   @@index([jobId, fieldName])
   @@index([documentConsideredId])
+  @@index([uploadedDocumentId])
 }
 
 model JobOutput {
