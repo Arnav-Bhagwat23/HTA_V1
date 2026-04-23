@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STANDARD
+  ADMIN
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum JobMode {
+  AUTOMATIC
+  MANUAL_UPLOAD
+}
+
+enum GeographyCode {
+  DE
+  FR
+  UK
+  IT
+  AU
+  ES
+  JP
+  OTHER
+}
+
+enum SourceType {
+  PDF
+  HTML
+  UPLOAD
+}
+
+enum ParseStatus {
+  PENDING
+  PARSED
+  FAILED
+}
+
+enum WarningCode {
+  NO_RESULT_FOUND
+  SOURCE_UNAVAILABLE
+  SOURCE_PARSE_FAILED
+  PDF_CORRUPT
+  MANUAL_UPLOAD_REQUIRED
+  UPLOAD_PARSE_FAILED
+  FIELD_NOT_PRESENT_IN_LATEST_DOCUMENT
+  CSV_GENERATION_FAILED
+  AUTH_REQUIRED
+  ACCESS_DENIED
+  UNKNOWN_ERROR
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String
+  role         UserRole
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  sessions     Session[]
+  searchJobs   SearchJob[] @relation("JobOwner")
+  auditEvents AuditEvent[]
+}
+
+model Session {
+  id             String        @id @default(uuid())
+  userId         String
+  tokenHash      String        @unique
+  status         SessionStatus @default(ACTIVE)
+  expiresAt      DateTime
+  lastAccessedAt DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status, expiresAt])
+}
+
+model SearchJob {
+  id                   String                @id @default(uuid())
+  userId               String
+  rawQuery             String?
+  mode                 JobMode
+  status               JobStatus             @default(QUEUED)
+  canonicalDrug        String?
+  canonicalIndication  String?
+  canonicalGeography   GeographyCode?
+  requiresManualUpload Boolean               @default(false)
+  failureCode          WarningCode?
+  failureMessage       String?
+  startedAt            DateTime?
+  completedAt          DateTime?
+  failedAt             DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  user                 User                  @relation("JobOwner", fields: [userId], references: [id], onDelete: Cascade)
+  jobSources           JobSource[]
+  documentsConsidered DocumentConsidered[]
+  uploadedDocuments    UploadedDocument[]
+  fieldExtractions     FieldExtraction[]
+  jobOutputs           JobOutput[]
+  auditEvents          AuditEvent[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([mode, createdAt])
+  @@index([canonicalGeography, createdAt])
+}
+
+model JobSource {
+  id                  String                @id @default(uuid())
+  jobId               String
+  sourceKey           String
+  sourceLabel         String
+  sourceType          SourceType
+  status              JobStatus?
+  errorCode           WarningCode?
+  errorMessage        String?
+  searchedAt          DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  job                 SearchJob             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  documentsConsidered DocumentConsidered[]
+
+  @@index([jobId])
+  @@index([sourceKey])
+}
+
+model DocumentConsidered {
+  id                 String                @id @default(uuid())
+  jobId              String
+  jobSourceId        String?
+  documentId         String
+  title              String
+  sourceUrl          String?
+  sourceCountry      GeographyCode?
+  sourceType         SourceType
+  publishedAt        DateTime?
+  wasSelected        Boolean               @default(false)
+  relevanceRank      Int?
+  recencyRank        Int?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  job                SearchJob             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobSource          JobSource?            @relation(fields: [jobSourceId], references: [id], onDelete: SetNull)
+  fieldExtractions   FieldExtraction[]
+
+  @@index([jobId])
+  @@index([jobSourceId])
+  @@index([documentId])
+}
+
+model UploadedDocument {
+  id               String       @id @default(uuid())
+  jobId            String
+  originalFilename String
+  mimeType         String
+  localTempPath    String
+  uploadSize       Int
+  parseStatus      ParseStatus  @default(PENDING)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  job              SearchJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([parseStatus])
+}
+
+model FieldExtraction {
+  id                   String                @id @default(uuid())
+  jobId                String
+  documentConsideredId String?
+  fieldName            String
+  fieldLabel           String
+  value                String?
+  confidence           Float?
+  warningCode          WarningCode?
+  sourcePage           String?
+  evidenceSnippet      String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  job                  SearchJob             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  documentConsidered   DocumentConsidered?   @relation(fields: [documentConsideredId], references: [id], onDelete: SetNull)
+
+  @@index([jobId, fieldName])
+  @@index([documentConsideredId])
+}
+
+model JobOutput {
+  id             String     @id @default(uuid())
+  jobId          String
+  outputType     String
+  storagePath    String?
+  mimeType       String?
+  isDownloadable Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  job            SearchJob  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, outputType])
+}
+
+model AuditEvent {
+  id           String     @id @default(uuid())
+  userId       String?
+  jobId        String?
+  eventType    String
+  eventPayload Json?
+  createdAt    DateTime   @default(now())
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  job          SearchJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([jobId, createdAt])
+  @@index([eventType, createdAt])
+}
+
+model SourceHealthEvent {
+  id          String       @id @default(uuid())
+  sourceKey   String
+  status      String
+  warningCode WarningCode?
+  message     String?
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+
+  @@index([sourceKey, createdAt])
+  @@index([status, createdAt])
+}
