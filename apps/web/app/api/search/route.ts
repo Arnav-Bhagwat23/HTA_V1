@@ -1,4 +1,4 @@
-import { JobMode, JobStatus } from '@prisma/client';
+import { JobMode, JobStatus, WarningCode } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
 import type { SearchResponse } from '../../../../../packages/shared/src';
@@ -80,15 +80,47 @@ export async function POST(request: NextRequest) {
       normalizedQuery: null,
     };
 
-    await searchJobsQueue.add(
-      `search-job:${job.id}`,
-      {
-        searchJobId: job.id,
-      },
-      {
-        jobId: job.id,
-      },
-    );
+    try {
+      await searchJobsQueue.add(
+        `search-job:${job.id}`,
+        {
+          searchJobId: job.id,
+        },
+        {
+          jobId: job.id,
+        },
+      );
+    } catch (error) {
+      await prisma.searchJob.update({
+        where: { id: job.id },
+        data: {
+          status: JobStatus.FAILED,
+          failureCode: WarningCode.UNKNOWN_ERROR,
+          failureMessage: 'Failed to enqueue search job.',
+          failedAt: new Date(),
+          completedAt: new Date(),
+          auditEvents: {
+            create: {
+              userId: auth.userId,
+              eventType: 'job_failed',
+              eventPayload: {
+                searchJobId: job.id,
+                failureCode: WarningCode.UNKNOWN_ERROR,
+                failureMessage: 'Failed to enqueue search job.',
+                stage: 'enqueue',
+              },
+            },
+          },
+        },
+      });
+
+      console.error('Failed to enqueue search job.', error);
+
+      return NextResponse.json(
+        { error: 'Failed to create search job.' },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
