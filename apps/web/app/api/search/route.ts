@@ -5,6 +5,7 @@ import type { SearchResponse } from '../../../../../packages/shared/src';
 import { searchRequestSchema } from '../../../../../packages/shared/src';
 import { getAuthenticatedUser } from '../../../lib/auth';
 import { prisma } from '../../../lib/prisma';
+import { searchJobsQueue } from '../../../lib/queues/search-jobs';
 
 const jobStatusToApiStatus = {
   QUEUED: 'queued',
@@ -78,6 +79,16 @@ export async function POST(request: NextRequest) {
       mode: jobModeToApiMode[job.mode],
       normalizedQuery: null,
     };
+
+    await searchJobsQueue.add(
+      `search-job:${job.id}`,
+      {
+        searchJobId: job.id,
+      },
+      {
+        jobId: job.id,
+      },
+    );
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
