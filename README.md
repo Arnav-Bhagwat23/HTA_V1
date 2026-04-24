@@ -166,15 +166,21 @@ The schema supports both:
 Current package scripts:
 
 ```bash
+npm run infra:up
+npm run infra:down
+npm run infra:logs
+npm run web
+npm run worker
 npm test
 npm run prisma:validate
 npm run prisma:seed
-npm run worker
 ```
 
 ### Environment
 
 The repo expects `DATABASE_URL` for Prisma and `REDIS_URL` for BullMQ.
+
+Copy `.env.example` to `.env` for local development.
 
 Example values:
 
@@ -207,6 +213,23 @@ If unset, local dev defaults are used:
 
 - standard: `user@hta.local`
 - admin: `admin@hta.local`
+
+### Predictable Local Run
+
+One simple local startup sequence is:
+
+```bash
+npm run infra:up
+npm run prisma:validate
+npm run prisma:seed
+npm run worker
+```
+
+Then start the web/API process in a separate terminal:
+
+```bash
+npm run web
+```
 
 ## Database Workflow
 

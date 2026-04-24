@@ -6,8 +6,12 @@
     "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
+    "infra:up": "docker compose up -d postgres redis",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f postgres redis",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "prisma:seed": "tsx prisma/seed.ts",
+    "web": "next dev apps/web",
     "worker": "tsx apps/worker/src/index.ts",
     "test": "vitest run"
   },
