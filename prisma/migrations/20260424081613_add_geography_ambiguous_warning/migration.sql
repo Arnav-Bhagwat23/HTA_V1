@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "WarningCode" ADD VALUE 'GEOGRAPHY_AMBIGUOUS';
