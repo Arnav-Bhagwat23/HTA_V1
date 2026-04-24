@@ -10,7 +10,11 @@ The repo is being built as a monolith-plus-worker system:
 
 ## What Works Today
 
-The first automatic mock vertical slice is working end to end for Australia (`AU`):
+Two required product branches now exist.
+
+### 1. Automatic AU Path
+
+The automatic Australia (`AU`) slice works end to end:
 
 1. authenticated user submits a search
 2. `POST /api/search` creates a `SearchJob`
@@ -18,21 +22,41 @@ The first automatic mock vertical slice is working end to end for Australia (`AU
 4. worker consumes the job
 5. query normalization runs
 6. supported geography routes to PBAC
-7. PBAC mock adapter returns a mock selected document
-8. PDF parser stub returns parsed text
-9. extraction helper returns mock extracted fields with evidence
+7. PBAC retrieval returns a selected document through a fixture/live boundary
+8. PDF parsing runs through `parsePdfDocument(...)`
+9. extraction derives persisted fields including:
+   - `source_document_title`
+   - `document_text_available`
+   - `hta_decision`
 10. worker persists:
    - `JobSource`
    - `DocumentConsidered`
    - `FieldExtraction`
    - `JobOutput`
-11. status, preview, and CSV download APIs all work against persisted state
+11. status, preview, and CSV download APIs read from persisted state
 
-This means the repo already proves the core async architecture and the latest-document-only automatic path with mocked retrieval/parsing/extraction.
+### 2. Manual Upload Path
+
+The manual-upload branch is now wired structurally:
+
+1. authenticated user submits upload metadata or multipart files to `POST /api/uploads`
+2. `UploadedDocument` rows are created for a user-owned job
+3. upload work is enqueued through BullMQ/Redis
+4. `processUploadJob(...)` reads uploaded files
+5. uploaded PDFs are parsed and extracted
+6. worker persists:
+   - `UploadedDocument.parseStatus`
+   - `FieldExtraction` rows linked by `uploadedDocumentId`
+   - `JobOutput`
+7. upload-processing audit events are written
+
+This means the repo now proves both core product branches structurally:
+- automatic retrieval/extraction
+- manual upload/extraction
 
 ## Current Boundaries
 
-The pipeline currently looks like this:
+The automatic pipeline currently looks like this:
 
 ```text
 POST /api/search
@@ -42,14 +66,29 @@ POST /api/search
   -> normalizeQuery(...)
   -> routeSourcePlans(...)
   -> adapter lookup
-  -> PBAC mock adapter returns SelectedDocument
+  -> PBAC adapter returns SelectedDocument
   -> parsePdfDocument(...)
   -> extractFieldsFromParsedDocument(...)
   -> worker persists document, fields, and downloadable output
   -> status / preview / download routes read persisted state
 ```
 
-Real scraping and real PDF parsing are not implemented yet. Those boundaries now exist as explicit replaceable layers.
+The manual-upload pipeline currently looks like this:
+
+```text
+POST /api/uploads
+  -> UploadedDocument rows created
+  -> BullMQ upload job enqueued
+  -> worker starts upload processing
+  -> parse uploaded PDF
+  -> extractFieldsFromParsedDocument(...)
+  -> worker persists upload-linked fields and downloadable output
+```
+
+The main replaceable boundaries are now explicit:
+- PBAC retrieval has `fixture` and `live` modes
+- PDF parsing has `mock` and `live` modes
+- extraction is still lightweight/rule-based, but no longer fully placeholder logic
 
 ## Repo Structure
 
@@ -68,14 +107,18 @@ Important current files:
 - `prisma/schema.prisma`
 - `prisma/seed.ts`
 - `apps/web/app/api/search/route.ts`
+- `apps/web/app/api/uploads/route.ts`
 - `apps/web/app/api/jobs/[jobId]/status/route.ts`
 - `apps/web/app/api/jobs/[jobId]/preview/route.ts`
 - `apps/web/app/api/jobs/[jobId]/download/route.ts`
 - `apps/worker/src/jobs/process-search.job.ts`
+- `apps/worker/src/jobs/process-upload.job.ts`
 - `apps/worker/src/normalizer/normalize-query.ts`
 - `apps/worker/src/routing/source-router.ts`
 - `apps/worker/src/adapters/pbac.adapter.ts`
+- `apps/worker/src/adapters/pbac.parser.ts`
 - `apps/worker/src/parsing/pdf-parser.ts`
+- `apps/worker/src/parsing/pdf-text-extractor.ts`
 - `apps/worker/src/extraction/extract-fields.ts`
 
 ## Shared Contracts
@@ -140,6 +183,17 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5433/hta_v1
 REDIS_URL=redis://127.0.0.1:6379
 ```
 
+Optional worker boundary flags:
+
+```bash
+PBAC_RETRIEVAL_MODE=fixture
+PDF_PARSER_MODE=mock
+```
+
+Supported current values:
+- `PBAC_RETRIEVAL_MODE=fixture|live`
+- `PDF_PARSER_MODE=mock|live`
+
 The seed script also supports:
 
 ```bash
@@ -172,14 +226,19 @@ Prisma 6.x is pinned intentionally so the repo can keep the classic `schema.pris
 
 ## Test Coverage
 
-The repo now includes a small worker-focused contract test suite covering:
+The repo now includes worker-focused tests covering:
 
 - `normalize-query`
 - `source-router`
 - `extract-fields`
 - `pdf-parser`
+- `http-client`
+- `pbac.adapter`
+- `pbac.parser`
+- AU search job integration path
+- manual upload integration path
 
-Run it with:
+Run them with:
 
 ```bash
 npm test
@@ -189,12 +248,11 @@ npm test
 
 This is still a scaffolded but working prototype. Current limitations include:
 
-- PBAC retrieval is mocked
-- PDF parsing is mocked
-- extraction is mocked
-- only the AU automatic path is meaningfully exercised
-- web routes exist as API handlers, but a full Next.js app shell is not scaffolded yet
-- manual upload flow is modeled in schema/contracts but not yet wired end to end
+- PBAC live retrieval only has first-pass document discovery, not full scraping robustness
+- the default AU path still uses mock parser mode unless `PDF_PARSER_MODE=live` is set
+- extraction is still narrow and rule-based rather than source-specific
+- preview/download are API handlers; there is not yet a full user-facing web app shell
+- upload route and upload worker are wired, but broader upload UX and retry/orchestration are still minimal
 
 ## Design Rules
 
@@ -211,11 +269,11 @@ The repo is intentionally following these rules:
 
 Near-term next work is likely to be one of:
 
-- replace PBAC mock adapter with real retrieval behavior
-- replace mock PDF parsing with real parsing
-- replace mock extraction with parser-driven extraction
-- wire the manual upload path end to end
-- add stronger worker/integration tests
+- harden live PBAC retrieval and discovery parsing
+- make `PDF_PARSER_MODE=live` the exercised default path once stable
+- expand extraction rules beyond the first `hta_decision` heuristic
+- add upload queue producer/consumer integration tests
+- add stronger app-level route/integration tests
 
 ## Status Summary
 
@@ -226,7 +284,8 @@ It already demonstrates a real persisted async job flow with:
 - worker execution
 - source routing
 - selected document persistence
+- uploaded document persistence
 - parsed-text boundary
-- extraction boundary
+- text-driven extraction boundary
 - preview output
 - CSV output
