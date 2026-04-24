@@ -54,6 +54,48 @@ This means the repo now proves both core product branches structurally:
 - automatic retrieval/extraction
 - manual upload/extraction
 
+## Proven Example Queries
+
+Two automatic-country example queries are now proven through the worker integration path:
+
+### AU / PBAC example
+
+Example query:
+
+```text
+Mock drug general indication Australia
+```
+
+Expected flow/output:
+- geography normalizes to `AU`
+- routing selects `pbac`
+- PBAC fixture/live boundary returns a selected document
+- parsing and extraction run
+- persisted fields include:
+  - `source_document_title`
+  - `document_text_available`
+  - `hta_decision`
+- CSV output becomes downloadable
+
+### UK / NICE example
+
+Example query:
+
+```text
+Mock drug general indication United Kingdom
+```
+
+Expected flow/output:
+- geography normalizes to `UK`
+- routing selects `nice`
+- NICE fixture/live boundary returns a selected document
+- parsing and extraction run
+- persisted fields include:
+  - `source_document_title`
+  - `document_text_available`
+  - `hta_decision`
+- CSV output becomes downloadable
+
 ## Current Boundaries
 
 The automatic pipeline currently looks like this:
