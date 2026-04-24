@@ -8,13 +8,15 @@
   "scripts": {
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "prisma:seed": "tsx prisma/seed.ts",
-    "worker": "tsx apps/worker/src/index.ts"
+    "worker": "tsx apps/worker/src/index.ts",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "prisma": "^6.18.0",
     "tsx": "^4.19.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@hta/shared": "file:packages/shared",
