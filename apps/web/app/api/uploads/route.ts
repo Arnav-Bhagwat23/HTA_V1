@@ -2,12 +2,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-import { JobMode } from '@prisma/client';
+import { JobMode, JobStatus, WarningCode } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { uploadRequestSchema } from '@hta/shared';
 import { getAuthenticatedUser } from '../../../lib/auth';
 import { prisma } from '../../../lib/prisma';
+import { uploadJobsQueue } from '../../../lib/queues/upload-jobs';
 
 const MAX_UPLOAD_FILES = 10;
 const LOCAL_UPLOAD_ROOT = path.join(process.cwd(), '.local', 'uploads');
@@ -230,6 +231,49 @@ export async function POST(request: NextRequest) {
         },
       });
     });
+
+    try {
+      await uploadJobsQueue.add(
+        `upload-job:${job.id}`,
+        {
+          searchJobId: job.id,
+        },
+        {
+          jobId: job.id,
+        },
+      );
+    } catch (error) {
+      await prisma.searchJob.update({
+        where: { id: job.id },
+        data: {
+          status: JobStatus.FAILED,
+          failureCode: WarningCode.UNKNOWN_ERROR,
+          failureMessage: 'Failed to enqueue upload processing job.',
+          failedAt: new Date(),
+          completedAt: new Date(),
+          auditEvents: {
+            create: {
+              userId: auth.userId,
+              eventType: 'upload_processing_failed',
+              eventPayload: {
+                searchJobId: job.id,
+                uploadedDocumentIds,
+                failureCode: WarningCode.UNKNOWN_ERROR,
+                failureMessage: 'Failed to enqueue upload processing job.',
+                stage: 'enqueue',
+              },
+            },
+          },
+        },
+      });
+
+      console.error('Failed to enqueue upload processing job.', error);
+
+      return NextResponse.json(
+        { error: 'Failed to enqueue upload processing job.' },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json(
       {
