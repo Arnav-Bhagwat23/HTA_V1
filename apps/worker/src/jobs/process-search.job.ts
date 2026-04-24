@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 
 import { prisma } from '../lib/prisma';
 import { normalizeQuery } from '../normalizer/normalize-query';
+import { routeSourcePlans } from '../routing/source-router';
 
 export interface ProcessSearchJobData {
   searchJobId: string;
@@ -50,6 +51,43 @@ const markJobCompleted = async (
       },
     },
   });
+};
+
+const createJobSources = async (
+  searchJobId: string,
+  normalizedQuery: NormalizedQuery,
+): Promise<number> => {
+  const sourcePlans = routeSourcePlans(normalizedQuery.canonicalGeography);
+
+  if (sourcePlans.length === 0) {
+    return 0;
+  }
+
+  await prisma.searchJob.update({
+    where: { id: searchJobId },
+    data: {
+      jobSources: {
+        create: sourcePlans.map((source) => ({
+          sourceKey: source.sourceKey,
+          sourceLabel: source.sourceLabel,
+          sourceCountry: source.sourceCountry,
+          sourceType: source.sourceType,
+        })),
+      },
+      auditEvents: {
+        create: {
+          eventType: 'source_routed',
+          eventPayload: {
+            searchJobId,
+            canonicalGeography: normalizedQuery.canonicalGeography,
+            sourceKeys: sourcePlans.map((source) => source.sourceKey),
+          },
+        },
+      },
+    },
+  });
+
+  return sourcePlans.length;
 };
 
 const persistNormalizedQuery = async (
@@ -136,7 +174,11 @@ export const processSearchJob = async (
       return;
     }
 
-    await markJobCompleted(searchJobId, JobStatus.COMPLETED);
+    const routedSourceCount = await createJobSources(searchJobId, normalizedQuery);
+
+    await markJobCompleted(searchJobId, JobStatus.COMPLETED, {
+      routedSourceCount,
+    });
   } catch (error) {
     const failureMessage =
       error instanceof Error ? error.message : 'Unknown worker failure.';
