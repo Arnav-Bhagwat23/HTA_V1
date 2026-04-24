@@ -8,6 +8,8 @@ import {
 import { processUploadJob } from './jobs/process-upload.job';
 import { processSearchJob } from './jobs/process-search.job';
 
+console.log(`Starting worker with queues: ${SEARCH_JOBS_QUEUE}, ${UPLOAD_JOBS_QUEUE}`);
+
 const searchWorker = new Worker(SEARCH_JOBS_QUEUE, processSearchJob, {
   connection: getRedisConnection(),
 });

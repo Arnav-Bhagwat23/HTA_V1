@@ -160,8 +160,7 @@ The schema supports both:
 ### Prerequisites
 
 - Node.js
-- PostgreSQL
-- Redis
+- Docker Desktop running locally, or equivalent local PostgreSQL and Redis services
 
 Current package scripts:
 

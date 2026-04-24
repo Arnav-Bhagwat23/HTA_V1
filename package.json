@@ -3,20 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "dotenv -e .env -- tsx prisma/seed.ts"
   },
   "scripts": {
     "infra:up": "docker compose up -d postgres redis",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f postgres redis",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed": "dotenv -e .env -- tsx prisma/seed.ts",
     "web": "next dev apps/web",
     "worker": "tsx apps/worker/src/index.ts",
     "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "dotenv-cli": "^11.0.0",
     "prisma": "^6.18.0",
     "tsx": "^4.19.2",
     "typescript": "^6.0.3",
