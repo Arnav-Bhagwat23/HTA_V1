@@ -5,6 +5,7 @@ import { Job } from 'bullmq';
 import { getAdapterBySourceKey } from '../adapters/registry';
 import { prisma } from '../lib/prisma';
 import { normalizeQuery } from '../normalizer/normalize-query';
+import { parsePdfDocument } from '../parsing/pdf-parser';
 import { routeSourcePlans } from '../routing/source-router';
 
 export interface ProcessSearchJobData {
@@ -200,6 +201,8 @@ const executeRoutedSources = async (
       continue;
     }
 
+    const parsedDocument = await parsePdfDocument(selectedDocument);
+
     const createdDocument = await prisma.documentConsidered.create({
       data: {
         jobId: searchJobId,
@@ -232,7 +235,7 @@ const executeRoutedSources = async (
           documentConsideredId: createdDocument.id,
           fieldName: 'hta_decision',
           fieldLabel: 'HTA Decision',
-          value: 'Mock extraction pending real parser',
+          value: `Mock extraction pending real parser. Parsed text length: ${parsedDocument.rawText.length}`,
           confidence: 0.1,
         },
       ],
