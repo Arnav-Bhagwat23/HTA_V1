@@ -1,7 +1,8 @@
-import { JobStatus, WarningCode } from '@prisma/client';
-import type { NormalizedQuery } from '@hta/shared';
+import { JobSourceStatus, JobStatus, ParseStatus, SourceType, WarningCode } from '@prisma/client';
+import type { NormalizedQuery, SourceType as SharedSourceType } from '@hta/shared';
 import { Job } from 'bullmq';
 
+import { getAdapterBySourceKey } from '../adapters/registry';
 import { prisma } from '../lib/prisma';
 import { normalizeQuery } from '../normalizer/normalize-query';
 import { routeSourcePlans } from '../routing/source-router';
@@ -9,6 +10,21 @@ import { routeSourcePlans } from '../routing/source-router';
 export interface ProcessSearchJobData {
   searchJobId: string;
 }
+
+type JobCompletionStatus = 'COMPLETED' | 'PARTIAL';
+
+const sharedSourceTypeToPrismaSourceType = (
+  sourceType: SharedSourceType,
+): SourceType => {
+  switch (sourceType) {
+    case 'pdf':
+      return SourceType.PDF;
+    case 'html':
+      return SourceType.HTML;
+    case 'upload':
+      return SourceType.UPLOAD;
+  }
+};
 
 const markJobStarted = async (searchJobId: string): Promise<void> => {
   await prisma.searchJob.update({
@@ -30,7 +46,7 @@ const markJobStarted = async (searchJobId: string): Promise<void> => {
 
 const markJobCompleted = async (
   searchJobId: string,
-  status: JobStatus.COMPLETED | JobStatus.PARTIAL,
+  status: JobCompletionStatus,
   eventPayload?: Record<string, unknown>,
 ): Promise<void> => {
   await prisma.searchJob.update({
@@ -56,11 +72,11 @@ const markJobCompleted = async (
 const createJobSources = async (
   searchJobId: string,
   normalizedQuery: NormalizedQuery,
-): Promise<number> => {
+): Promise<void> => {
   const sourcePlans = routeSourcePlans(normalizedQuery.canonicalGeography);
 
   if (sourcePlans.length === 0) {
-    return 0;
+    return;
   }
 
   await prisma.searchJob.update({
@@ -86,8 +102,113 @@ const createJobSources = async (
       },
     },
   });
+};
 
-  return sourcePlans.length;
+const markJobSourceSkipped = async (
+  jobSourceId: string,
+  errorMessage: string,
+): Promise<void> => {
+  await prisma.jobSource.update({
+    where: { id: jobSourceId },
+    data: {
+      status: JobSourceStatus.SKIPPED,
+      errorMessage,
+      completedAt: new Date(),
+    },
+  });
+};
+
+const markJobSourceCompleted = async (
+  jobSourceId: string,
+): Promise<void> => {
+  await prisma.jobSource.update({
+    where: { id: jobSourceId },
+    data: {
+      status: JobSourceStatus.COMPLETED,
+      completedAt: new Date(),
+    },
+  });
+};
+
+const markJobSourceNoResult = async (
+  jobSourceId: string,
+): Promise<void> => {
+  await prisma.jobSource.update({
+    where: { id: jobSourceId },
+    data: {
+      status: JobSourceStatus.COMPLETED,
+      errorCode: WarningCode.NO_RESULT_FOUND,
+      errorMessage: 'No relevant document was found for this source.',
+      completedAt: new Date(),
+    },
+  });
+};
+
+const executeRoutedSources = async (
+  searchJobId: string,
+  normalizedQuery: NormalizedQuery,
+): Promise<boolean> => {
+  const jobSources = await prisma.jobSource.findMany({
+    where: { jobId: searchJobId },
+    orderBy: [
+      { createdAt: 'asc' },
+      { sourceKey: 'asc' },
+    ],
+  });
+
+  let hasSelectedDocument = false;
+
+  for (const jobSource of jobSources) {
+    const adapter = getAdapterBySourceKey(jobSource.sourceKey);
+
+    if (!adapter) {
+      await markJobSourceSkipped(
+        jobSource.id,
+        `No adapter is registered for source "${jobSource.sourceKey}".`,
+      );
+      continue;
+    }
+
+    await prisma.jobSource.update({
+      where: { id: jobSource.id },
+      data: {
+        status: JobSourceStatus.RUNNING,
+        startedAt: jobSource.startedAt ?? new Date(),
+        searchedAt: new Date(),
+      },
+    });
+
+    const selectedDocument = await adapter.searchLatestRelevantDocument(
+      normalizedQuery,
+    );
+
+    if (!selectedDocument) {
+      await markJobSourceNoResult(jobSource.id);
+      continue;
+    }
+
+    await prisma.documentConsidered.create({
+      data: {
+        jobId: searchJobId,
+        jobSourceId: jobSource.id,
+        documentTitle: selectedDocument.title,
+        documentUrl: selectedDocument.sourceUrl,
+        sourceType: sharedSourceTypeToPrismaSourceType(selectedDocument.sourceType),
+        sourceCountry: selectedDocument.sourceCountry,
+        publishedAt: selectedDocument.publishedAt
+          ? new Date(selectedDocument.publishedAt)
+          : null,
+        isSelected: true,
+        selectionRank: 1,
+        parseStatus: ParseStatus.PENDING,
+      },
+    });
+
+    await markJobSourceCompleted(jobSource.id);
+    hasSelectedDocument = true;
+  }
+
+  return hasSelectedDocument;
 };
 
 const persistNormalizedQuery = async (
@@ -174,11 +295,20 @@ export const processSearchJob = async (
       return;
     }
 
-    const routedSourceCount = await createJobSources(searchJobId, normalizedQuery);
+    await createJobSources(searchJobId, normalizedQuery);
 
-    await markJobCompleted(searchJobId, JobStatus.COMPLETED, {
-      routedSourceCount,
-    });
+    const hasSelectedDocument = await executeRoutedSources(
+      searchJobId,
+      normalizedQuery,
+    );
+
+    await markJobCompleted(
+      searchJobId,
+      hasSelectedDocument ? JobStatus.COMPLETED : JobStatus.PARTIAL,
+      {
+        hasSelectedDocument,
+      },
+    );
   } catch (error) {
     const failureMessage =
       error instanceof Error ? error.message : 'Unknown worker failure.';
