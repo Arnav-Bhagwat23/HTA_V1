@@ -3,6 +3,7 @@ import type { NormalizedQuery, SourceType as SharedSourceType } from '@hta/share
 import { Job } from 'bullmq';
 
 import { getAdapterBySourceKey } from '../adapters/registry';
+import { extractFieldsFromParsedDocument } from '../extraction/extract-fields';
 import { prisma } from '../lib/prisma';
 import { normalizeQuery } from '../normalizer/normalize-query';
 import { parsePdfDocument } from '../parsing/pdf-parser';
@@ -220,25 +221,19 @@ const executeRoutedSources = async (
       },
     });
 
+    const extractionResult = await extractFieldsFromParsedDocument(parsedDocument);
+
     await prisma.fieldExtraction.createMany({
-      data: [
-        {
+      data: extractionResult.fields.map((field) => ({
           jobId: searchJobId,
           documentConsideredId: createdDocument.id,
-          fieldName: 'source_document_title',
-          fieldLabel: 'Source Document Title',
-          value: selectedDocument.title,
-          confidence: 1,
-        },
-        {
-          jobId: searchJobId,
-          documentConsideredId: createdDocument.id,
-          fieldName: 'hta_decision',
-          fieldLabel: 'HTA Decision',
-          value: `Mock extraction pending real parser. Parsed text length: ${parsedDocument.rawText.length}`,
-          confidence: 0.1,
-        },
-      ],
+          fieldName: field.fieldName,
+          fieldLabel: field.fieldLabel,
+          value: field.value,
+          confidence: field.confidence,
+          warningCode: field.warningCodes[0] ?? null,
+          evidenceSnippet: parsedDocument.rawText.slice(0, 200),
+        })),
     });
 
     await markJobSourceCompleted(jobSource.id);
