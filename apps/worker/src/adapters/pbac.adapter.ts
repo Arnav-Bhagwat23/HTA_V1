@@ -1,18 +1,9 @@
 import type { NormalizedQuery, SelectedDocument } from '@hta/shared';
 
+import { PBAC_FIXTURE_SELECTED_DOCUMENT } from './fixtures/pbac-search-result';
 import type { SourceAdapter } from './base.adapter';
 
-const MOCK_PBAC_DOCUMENT_URL =
-  'https://www.pbs.gov.au/info/industry/listing/elements/pbac-meetings/mock-pbac-public-summary-document';
-
-const buildMockDocumentTitle = (query: NormalizedQuery): string => {
-  const titleParts = [
-    query.canonicalDrug ?? 'Mock drug',
-    query.canonicalIndication ?? 'general indication',
-  ];
-
-  return `PBAC Public Summary Document - ${titleParts.join(' - ')}`;
-};
+const PBAC_RETRIEVAL_MODE = process.env.PBAC_RETRIEVAL_MODE?.trim() || 'fixture';
 
 export class PbacAdapter implements SourceAdapter {
   readonly source = 'pbac' as const;
@@ -28,14 +19,10 @@ export class PbacAdapter implements SourceAdapter {
       return null;
     }
 
-    return {
-      documentId: crypto.randomUUID(),
-      title: buildMockDocumentTitle(query),
-      sourceName: 'PBAC',
-      sourceType: 'pdf',
-      sourceCountry: 'AU',
-      sourceUrl: MOCK_PBAC_DOCUMENT_URL,
-      publishedAt: '2026-04-24T00:00:00.000Z',
-    };
+    if (PBAC_RETRIEVAL_MODE === 'fixture') {
+      return PBAC_FIXTURE_SELECTED_DOCUMENT;
+    }
+
+    throw new Error('PBAC retrieval mode is not implemented yet.');
   }
 }
