@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { SelectedDocument } from '@hta/shared';
@@ -107,5 +109,20 @@ describe('pdf-parser', () => {
         parser: 'pdf-parse',
       },
     });
+  });
+
+  it('parsePdfBuffer parses text from the local fixture PDF', async () => {
+    const { parsePdfBuffer } = await import('./pdf-parser');
+    const pdfBytes = await readFile(
+      path.join(process.cwd(), 'apps/worker/src/parsing/fixtures/minimal.pdf'),
+    );
+
+    const parsed = await parsePdfBuffer(pdfBytes, buildSelectedDocument());
+
+    expect(parsed.documentId).toBe('doc-1');
+    expect(parsed.sourceType).toBe('pdf');
+    expect(parsed.rawText.length).toBeGreaterThan(0);
+    expect(parsed.rawText).toContain('Hello HTA PDF');
+    expect(parsed.metadata.parser).toBe('pdf-parse');
   });
 });
