@@ -1,5 +1,6 @@
 import type { ParsedDocument, SelectedDocument } from '@hta/shared';
 
+import { extractPdfText } from './pdf-text-extractor';
 import { fetchBinary } from '../retrieval/http-client';
 
 const getPdfParserMode = (): string =>
@@ -24,10 +25,24 @@ const buildMockParsedDocument = (
 };
 
 export const parsePdfBuffer = async (
-  _pdfBuffer: Uint8Array,
-  _selectedDocument: SelectedDocument,
+  pdfBuffer: Uint8Array,
+  selectedDocument: SelectedDocument,
 ): Promise<ParsedDocument> => {
-  throw new Error('PDF parser live mode is not implemented yet.');
+  const rawText = await extractPdfText(pdfBuffer);
+
+  return {
+    documentId: selectedDocument.documentId,
+    sourceType: 'pdf',
+    title: selectedDocument.title,
+    publishedAt: selectedDocument.publishedAt,
+    rawText,
+    metadata: {
+      sourceName: selectedDocument.sourceName,
+      sourceUrl: selectedDocument.sourceUrl,
+      sourceCountry: selectedDocument.sourceCountry,
+      parser: 'pdf-parse',
+    },
+  };
 };
 
 export const parsePdfDocument = async (
