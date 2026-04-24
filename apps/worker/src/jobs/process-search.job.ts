@@ -187,7 +187,7 @@ const executeRoutedSources = async (
       continue;
     }
 
-    await prisma.documentConsidered.create({
+    const createdDocument = await prisma.documentConsidered.create({
       data: {
         jobId: searchJobId,
         jobSourceId: jobSource.id,
@@ -202,6 +202,27 @@ const executeRoutedSources = async (
         selectionRank: 1,
         parseStatus: ParseStatus.PENDING,
       },
+    });
+
+    await prisma.fieldExtraction.createMany({
+      data: [
+        {
+          jobId: searchJobId,
+          documentConsideredId: createdDocument.id,
+          fieldName: 'source_document_title',
+          fieldLabel: 'Source Document Title',
+          value: selectedDocument.title,
+          confidence: 1,
+        },
+        {
+          jobId: searchJobId,
+          documentConsideredId: createdDocument.id,
+          fieldName: 'hta_decision',
+          fieldLabel: 'HTA Decision',
+          value: 'Mock extraction pending real parser',
+          confidence: 0.1,
+        },
+      ],
     });
 
     await markJobSourceCompleted(jobSource.id);
