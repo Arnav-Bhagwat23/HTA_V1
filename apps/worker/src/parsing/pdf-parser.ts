@@ -1,5 +1,7 @@
 import type { ParsedDocument, SelectedDocument } from '@hta/shared';
 
+import { fetchBinary } from '../retrieval/http-client';
+
 const getPdfParserMode = (): string =>
   process.env.PDF_PARSER_MODE?.trim() || 'mock';
 
@@ -38,7 +40,12 @@ export const parsePdfDocument = async (
   }
 
   if (mode === 'live') {
-    return parsePdfBuffer(new Uint8Array(), selectedDocument);
+    if (!selectedDocument.sourceUrl) {
+      throw new Error('PDF parser live mode requires selectedDocument.sourceUrl.');
+    }
+
+    const pdfBytes = await fetchBinary(selectedDocument.sourceUrl);
+    return parsePdfBuffer(pdfBytes, selectedDocument);
   }
 
   throw new Error('PDF parser mode is not implemented yet.');

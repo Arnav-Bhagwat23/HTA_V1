@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { SelectedDocument } from '@hta/shared';
 
-const buildSelectedDocument = (): SelectedDocument => ({
+const buildSelectedDocument = (
+  overrides: Partial<SelectedDocument> = {},
+): SelectedDocument => ({
   documentId: 'doc-1',
   title: 'PBAC Public Summary Document',
   sourceName: 'PBAC',
@@ -10,10 +12,13 @@ const buildSelectedDocument = (): SelectedDocument => ({
   sourceCountry: 'AU',
   sourceUrl: 'https://example.com/pbac.pdf',
   publishedAt: '2026-04-24T00:00:00.000Z',
+  ...overrides,
 });
 
 afterEach(() => {
   delete process.env.PDF_PARSER_MODE;
+  vi.doUnmock('../retrieval/http-client');
+  vi.restoreAllMocks();
   vi.resetModules();
 });
 
@@ -41,11 +46,26 @@ describe('pdf-parser', () => {
 
   it('live mode delegates to parsePdfBuffer and currently throws', async () => {
     process.env.PDF_PARSER_MODE = 'live';
+    const fetchBinaryMock = vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3]));
+    vi.doMock('../retrieval/http-client', () => ({
+      fetchBinary: fetchBinaryMock,
+    }));
     const { parsePdfDocument } = await import('./pdf-parser');
 
     await expect(
       parsePdfDocument(buildSelectedDocument()),
     ).rejects.toThrow('PDF parser live mode is not implemented yet.');
+
+    expect(fetchBinaryMock).toHaveBeenCalledWith('https://example.com/pbac.pdf');
+  });
+
+  it('live mode throws a clear error when sourceUrl is missing', async () => {
+    process.env.PDF_PARSER_MODE = 'live';
+    const { parsePdfDocument } = await import('./pdf-parser');
+
+    await expect(
+      parsePdfDocument(buildSelectedDocument({ sourceUrl: null })),
+    ).rejects.toThrow('PDF parser live mode requires selectedDocument.sourceUrl.');
   });
 
   it('parsePdfBuffer currently throws for the future live parsing boundary', async () => {
