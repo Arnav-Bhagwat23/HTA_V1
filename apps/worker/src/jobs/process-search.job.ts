@@ -224,7 +224,10 @@ const executeRoutedSources = async (
     const extractionResult = await extractFieldsFromParsedDocument(parsedDocument);
 
     await prisma.fieldExtraction.createMany({
-      data: extractionResult.fields.map((field) => ({
+      data: extractionResult.fields.map((field) => {
+        const primaryEvidence = field.evidence[0];
+
+        return {
           jobId: searchJobId,
           documentConsideredId: createdDocument.id,
           fieldName: field.fieldName,
@@ -232,8 +235,10 @@ const executeRoutedSources = async (
           value: field.value,
           confidence: field.confidence,
           warningCode: field.warningCodes[0] ?? null,
-          evidenceSnippet: parsedDocument.rawText.slice(0, 200),
-        })),
+          sourcePage: primaryEvidence?.sourcePage ?? null,
+          evidenceSnippet: primaryEvidence?.snippet ?? null,
+        };
+      }),
     });
 
     await markJobSourceCompleted(jobSource.id);
