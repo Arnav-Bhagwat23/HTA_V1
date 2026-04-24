@@ -37,7 +37,8 @@ describe('pdf-parser', () => {
       sourceType: 'pdf',
       title: 'PBAC Public Summary Document',
       publishedAt: '2026-04-24T00:00:00.000Z',
-      rawText: 'Mock parsed PDF text for PBAC Public Summary Document',
+      rawText:
+        'Mock parsed PDF text for PBAC Public Summary Document. The medicine is recommended for listing.',
       metadata: {
         sourceName: 'PBAC',
         sourceUrl: 'https://example.com/pbac.pdf',

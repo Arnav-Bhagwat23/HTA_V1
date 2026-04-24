@@ -14,7 +14,9 @@ const buildMockParsedDocument = (
     sourceType: 'pdf',
     title: selectedDocument.title,
     publishedAt: selectedDocument.publishedAt,
-    rawText: `Mock parsed PDF text for ${selectedDocument.title}`,
+    rawText:
+      `Mock parsed PDF text for ${selectedDocument.title}. ` +
+      'The medicine is recommended for listing.',
     metadata: {
       sourceName: selectedDocument.sourceName,
       sourceUrl: selectedDocument.sourceUrl,
