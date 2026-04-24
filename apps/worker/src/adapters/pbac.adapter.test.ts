@@ -46,9 +46,9 @@ describe('PbacAdapter', () => {
     ).resolves.toEqual(PBAC_FIXTURE_SELECTED_DOCUMENT);
   });
 
-  it('live mode calls fetchText and returns null', async () => {
+  it('live mode calls fetchText and returns null when no candidate exists', async () => {
     process.env.PBAC_RETRIEVAL_MODE = 'live';
-    const fetchTextMock = vi.fn().mockResolvedValue('<html></html>');
+    const fetchTextMock = vi.fn().mockResolvedValue('<html><body>No PDFs here</body></html>');
     vi.doMock('../retrieval/http-client', () => ({
       fetchText: fetchTextMock,
     }));

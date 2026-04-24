@@ -3,6 +3,7 @@ import type { NormalizedQuery, SelectedDocument } from '@hta/shared';
 import { fetchText } from '../retrieval/http-client';
 import { PBAC_FIXTURE_SELECTED_DOCUMENT } from './fixtures/pbac-search-result';
 import type { SourceAdapter } from './base.adapter';
+import { parseLatestPbacSelectedDocument } from './pbac.parser';
 
 const PBAC_RETRIEVAL_MODE = process.env.PBAC_RETRIEVAL_MODE?.trim() || 'fixture';
 const PBAC_SEARCH_URL =
@@ -27,8 +28,8 @@ export class PbacAdapter implements SourceAdapter {
     }
 
     if (PBAC_RETRIEVAL_MODE === 'live') {
-      await fetchText(PBAC_SEARCH_URL);
-      return null;
+      const html = await fetchText(PBAC_SEARCH_URL);
+      return parseLatestPbacSelectedDocument(html, PBAC_SEARCH_URL);
     }
 
     throw new Error('PBAC retrieval mode is not implemented yet.');
