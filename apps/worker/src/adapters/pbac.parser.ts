@@ -63,7 +63,37 @@ const parseCandidates = (
     });
   }
 
-  return candidates;
+  const uniqueCandidates = new Map<string, PbacDocumentCandidate>();
+
+  for (const candidate of candidates) {
+    const existingCandidate = uniqueCandidates.get(candidate.url);
+
+    if (!existingCandidate) {
+      uniqueCandidates.set(candidate.url, candidate);
+      continue;
+    }
+
+    const existingTime = existingCandidate.publishedAt
+      ? Date.parse(existingCandidate.publishedAt)
+      : 0;
+    const nextTime = candidate.publishedAt
+      ? Date.parse(candidate.publishedAt)
+      : 0;
+
+    if (nextTime > existingTime) {
+      uniqueCandidates.set(candidate.url, candidate);
+      continue;
+    }
+
+    if (
+      existingCandidate.title === 'PBAC Public Summary Document' &&
+      candidate.title !== 'PBAC Public Summary Document'
+    ) {
+      uniqueCandidates.set(candidate.url, candidate);
+    }
+  }
+
+  return [...uniqueCandidates.values()];
 };
 
 const sortCandidates = (
