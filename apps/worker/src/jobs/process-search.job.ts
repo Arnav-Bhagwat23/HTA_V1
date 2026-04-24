@@ -144,6 +144,19 @@ const markJobSourceNoResult = async (
   });
 };
 
+const markCsvOutputReady = async (
+  searchJobId: string,
+): Promise<void> => {
+  await prisma.jobOutput.create({
+    data: {
+      jobId: searchJobId,
+      outputType: 'csv',
+      mimeType: 'text/csv; charset=utf-8',
+      isDownloadable: true,
+    },
+  });
+};
+
 const executeRoutedSources = async (
   searchJobId: string,
   normalizedQuery: NormalizedQuery,
@@ -322,6 +335,10 @@ export const processSearchJob = async (
       searchJobId,
       normalizedQuery,
     );
+
+    if (hasSelectedDocument) {
+      await markCsvOutputReady(searchJobId);
+    }
 
     await markJobCompleted(
       searchJobId,
