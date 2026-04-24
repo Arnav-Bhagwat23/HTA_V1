@@ -46,8 +46,25 @@ describe('PbacAdapter', () => {
     ).resolves.toEqual(PBAC_FIXTURE_SELECTED_DOCUMENT);
   });
 
-  it('non-fixture mode throws not implemented', async () => {
+  it('live mode calls fetchText and returns null', async () => {
     process.env.PBAC_RETRIEVAL_MODE = 'live';
+    const fetchTextMock = vi.fn().mockResolvedValue('<html></html>');
+    vi.doMock('../retrieval/http-client', () => ({
+      fetchText: fetchTextMock,
+    }));
+    const { PbacAdapter } = await import('./pbac.adapter');
+
+    await expect(
+      new PbacAdapter().searchLatestRelevantDocument(buildQuery()),
+    ).resolves.toBeNull();
+
+    expect(fetchTextMock).toHaveBeenCalledWith(
+      'https://www.pbs.gov.au/info/industry/listing/elements/pbac-meetings',
+    );
+  });
+
+  it('non-fixture non-live mode throws not implemented', async () => {
+    process.env.PBAC_RETRIEVAL_MODE = 'unsupported';
     const { PbacAdapter } = await import('./pbac.adapter');
 
     await expect(
