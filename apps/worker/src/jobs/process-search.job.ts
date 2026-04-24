@@ -30,6 +30,7 @@ const markJobStarted = async (searchJobId: string): Promise<void> => {
 const markJobCompleted = async (
   searchJobId: string,
   status: JobStatus.COMPLETED | JobStatus.PARTIAL,
+  eventPayload?: Record<string, unknown>,
 ): Promise<void> => {
   await prisma.searchJob.update({
     where: { id: searchJobId },
@@ -43,6 +44,7 @@ const markJobCompleted = async (
             searchJobId,
             status,
             stage: 'normalized',
+            ...(eventPayload ?? {}),
           },
         },
       },
@@ -123,6 +125,14 @@ export const processSearchJob = async (
 
     if (normalizedQuery.rawQuery.length === 0) {
       await markJobCompleted(searchJobId, JobStatus.PARTIAL);
+      return;
+    }
+
+    if (normalizedQuery.requiresManualUpload) {
+      await markJobCompleted(searchJobId, JobStatus.PARTIAL, {
+        warningCode: WarningCode.MANUAL_UPLOAD_REQUIRED,
+        warningMessage: 'Manual upload is required for the detected geography.',
+      });
       return;
     }
 
