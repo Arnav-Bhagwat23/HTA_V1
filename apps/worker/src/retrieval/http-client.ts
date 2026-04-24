@@ -17,3 +17,13 @@ export const fetchJson = async <T>(url: string): Promise<T> => {
 
   return response.json() as Promise<T>;
 };
+
+export const fetchBinary = async (url: string): Promise<Uint8Array> => {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch binary from ${url}: ${response.status} ${response.statusText}`);
+  }
+
+  return new Uint8Array(await response.arrayBuffer());
+};
