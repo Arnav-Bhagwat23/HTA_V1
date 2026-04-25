@@ -6,7 +6,9 @@ import { WORKBOOK_SHEETS } from './workbook-schema';
 
 describe('buildWorkbookBuffer', () => {
   it('creates all expected sheets and HTA Results headers', async () => {
-    const buffer = await buildWorkbookBuffer();
+    const buffer = await buildWorkbookBuffer({
+      htaResults: [],
+    });
     const workbook = new ExcelJS.Workbook();
 
     await workbook.xlsx.load(buffer);
@@ -37,5 +39,34 @@ describe('buildWorkbookBuffer', () => {
     expect(workbook.getWorksheet('Missing Fields & Warnings')).toBeDefined();
     expect(workbook.getWorksheet('Run Metadata')).toBeDefined();
     expect(workbook.getWorksheet('Source URLs')).toBeDefined();
+  });
+
+  it('writes one HTA Results row', async () => {
+    const buffer = await buildWorkbookBuffer({
+      htaResults: [
+        {
+          drugName: 'Mock drug',
+          indication: 'General indication',
+          country: 'Australia',
+          htaDecision: 'Recommended',
+          decisionDate: '2026-04-25',
+          restrictionDetails: 'Restricted to mock criteria',
+        },
+      ],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const htaResultsSheet = workbook.getWorksheet('HTA Results');
+    expect(htaResultsSheet?.getRow(2).values).toEqual([
+      ,
+      'Mock drug',
+      'General indication',
+      'Australia',
+      'Recommended',
+      '2026-04-25',
+      'Restricted to mock criteria',
+    ]);
   });
 });
