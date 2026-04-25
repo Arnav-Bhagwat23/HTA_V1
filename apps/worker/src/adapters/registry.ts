@@ -2,6 +2,7 @@ import type { RoutedSourcePlan } from '../routing/source-router';
 
 import { AifaAdapter } from './aifa.adapter';
 import { AempsAdapter } from './aemps.adapter';
+import { JapanAdapter } from './japan.adapter';
 import { NiceAdapter } from './nice.adapter';
 import type { SourceAdapter } from './base.adapter';
 import { GbaAdapter } from './gba.adapter';
@@ -13,6 +14,7 @@ export const adapters: SourceAdapter[] = [
   new AempsAdapter(),
   new GbaAdapter(),
   new HasAdapter(),
+  new JapanAdapter(),
   new NiceAdapter(),
   new PbacAdapter(),
 ];
