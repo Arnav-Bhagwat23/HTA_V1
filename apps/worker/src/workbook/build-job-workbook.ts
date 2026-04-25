@@ -8,6 +8,7 @@ import type { FieldProvenanceRow } from '../schema/field-provenance.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
 import type { MissingFieldsWarningsRow } from '../schema/missing-fields-warnings.schema';
 import type { RunMetadataRow } from '../schema/run-metadata.schema';
+import type { SourceUrlsRow } from '../schema/source-urls.schema';
 import { buildWorkbookBuffer } from './workbook-builder';
 
 export interface JobWorkbookResult {
@@ -245,6 +246,27 @@ const mapJobToRunMetadataRows = (job: {
   },
 ];
 
+const mapJobToSourceUrlsRows = (job: {
+  documentsConsidered: Array<{
+    documentTitle: string;
+    documentUrl: string | null;
+    sourceType: string;
+    sourceCountry: string | null;
+    publishedAt: Date | null;
+    jobSource: {
+      sourceLabel: string;
+    } | null;
+  }>;
+}): SourceUrlsRow[] =>
+  job.documentsConsidered.map((document) => ({
+    sourceName: document.jobSource?.sourceLabel ?? null,
+    sourceType: document.sourceType.toLowerCase(),
+    sourceCountry: document.sourceCountry,
+    url: document.documentUrl,
+    title: document.documentTitle,
+    publishedAt: document.publishedAt?.toISOString() ?? null,
+  }));
+
 export const buildJobWorkbook = async (
   searchJobId: string,
 ): Promise<JobWorkbookResult> => {
@@ -373,6 +395,7 @@ export const buildJobWorkbook = async (
     missingFieldsWarnings: mapJobToMissingFieldsWarningsRows(job),
     nmaResults: [],
     runMetadata: mapJobToRunMetadataRows(job),
+    sourceUrls: mapJobToSourceUrlsRows(job),
     trialResults: [],
   });
 

@@ -16,6 +16,7 @@ describe('buildWorkbookBuffer', () => {
       missingFieldsWarnings: [],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -135,6 +136,15 @@ describe('buildWorkbookBuffer', () => {
       'Created At',
       'Completed At',
     ]);
+    expect(workbook.getWorksheet('Source URLs')?.getRow(1).values).toEqual([
+      ,
+      'Source Name',
+      'Source Type',
+      'Source Country',
+      'URL',
+      'Title',
+      'Published At',
+    ]);
     expect(workbook.getWorksheet('Missing Fields & Warnings')).toBeDefined();
     expect(workbook.getWorksheet('Run Metadata')).toBeDefined();
     expect(workbook.getWorksheet('Source URLs')).toBeDefined();
@@ -160,6 +170,7 @@ describe('buildWorkbookBuffer', () => {
       missingFieldsWarnings: [],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -189,6 +200,7 @@ describe('buildWorkbookBuffer', () => {
       missingFieldsWarnings: [],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [
         {
           trialName: 'MOCK-301',
@@ -236,6 +248,7 @@ describe('buildWorkbookBuffer', () => {
         },
       ],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -275,6 +288,7 @@ describe('buildWorkbookBuffer', () => {
       missingFieldsWarnings: [],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -313,6 +327,7 @@ describe('buildWorkbookBuffer', () => {
       missingFieldsWarnings: [],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -355,6 +370,7 @@ describe('buildWorkbookBuffer', () => {
       missingFieldsWarnings: [],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -403,6 +419,7 @@ describe('buildWorkbookBuffer', () => {
       missingFieldsWarnings: [],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -444,6 +461,7 @@ describe('buildWorkbookBuffer', () => {
       missingFieldsWarnings: [],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -477,6 +495,7 @@ describe('buildWorkbookBuffer', () => {
       ],
       nmaResults: [],
       runMetadata: [],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -521,6 +540,7 @@ describe('buildWorkbookBuffer', () => {
           completedAt: '2026-04-25T12:05:00.000Z',
         },
       ],
+      sourceUrls: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -540,5 +560,43 @@ describe('buildWorkbookBuffer', () => {
     expect(row?.getCell(8).value).toBe(false);
     expect(row?.getCell(9).value).toBe('2026-04-25T12:00:00.000Z');
     expect(row?.getCell(10).value).toBe('2026-04-25T12:05:00.000Z');
+  });
+
+  it('writes Source URLs rows', async () => {
+    const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
+      economicEvaluation: [],
+      extractionAuditLog: [],
+      fieldProvenance: [],
+      guidelineResults: [],
+      htaResults: [],
+      missingFieldsWarnings: [],
+      nmaResults: [],
+      runMetadata: [],
+      sourceUrls: [
+        {
+          sourceName: 'PBAC',
+          sourceType: 'pdf',
+          sourceCountry: 'AU',
+          url: 'https://example.com/mock-pbac.pdf',
+          title: 'Mock PBAC Public Summary Document',
+          publishedAt: '2026-04-25T00:00:00.000Z',
+        },
+      ],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const sourceUrlsSheet = workbook.getWorksheet('Source URLs');
+    const row = sourceUrlsSheet?.getRow(2);
+
+    expect(row?.getCell(1).value).toBe('PBAC');
+    expect(row?.getCell(2).value).toBe('pdf');
+    expect(row?.getCell(3).value).toBe('AU');
+    expect(row?.getCell(4).value).toBe('https://example.com/mock-pbac.pdf');
+    expect(row?.getCell(5).value).toBe('Mock PBAC Public Summary Document');
+    expect(row?.getCell(6).value).toBe('2026-04-25T00:00:00.000Z');
   });
 });

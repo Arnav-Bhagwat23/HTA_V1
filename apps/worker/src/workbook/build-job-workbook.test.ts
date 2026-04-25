@@ -251,6 +251,17 @@ describe('buildJobWorkbook', () => {
         'string',
       );
       expect(runMetadataSheet?.getRow(2).getCell(10).value).not.toBeNull();
+
+      const sourceUrlsSheet = workbook.getWorksheet('Source URLs');
+      expect(sourceUrlsSheet?.getRow(2).getCell(1).value).toBeNull();
+      expect(sourceUrlsSheet?.getRow(2).getCell(2).value).toBe('pdf');
+      expect(sourceUrlsSheet?.getRow(2).getCell(3).value).toBe('AU');
+      expect(sourceUrlsSheet?.getRow(2).getCell(4).value).toBe(
+        'https://example.com/mock-pbac-public-summary-document.pdf',
+      );
+      expect(sourceUrlsSheet?.getRow(2).getCell(5).value).toBe(
+        'PBAC Public Summary Document - Mock drug - general indication',
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },

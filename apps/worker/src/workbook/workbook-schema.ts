@@ -112,5 +112,12 @@ export const WORKBOOK_COLUMNS: Record<WorkbookSheetName, WorkbookColumn[]> = {
     { key: 'createdAt', header: 'Created At' },
     { key: 'completedAt', header: 'Completed At' },
   ],
-  'Source URLs': [],
+  'Source URLs': [
+    { key: 'sourceName', header: 'Source Name' },
+    { key: 'sourceType', header: 'Source Type' },
+    { key: 'sourceCountry', header: 'Source Country' },
+    { key: 'url', header: 'URL' },
+    { key: 'title', header: 'Title' },
+    { key: 'publishedAt', header: 'Published At' },
+  ],
 };
