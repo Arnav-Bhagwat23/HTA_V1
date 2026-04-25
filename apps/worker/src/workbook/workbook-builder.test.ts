@@ -13,6 +13,7 @@ describe('buildWorkbookBuffer', () => {
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
+      missingFieldsWarnings: [],
       nmaResults: [],
       trialResults: [],
     });
@@ -112,6 +113,14 @@ describe('buildWorkbookBuffer', () => {
       'Event Payload',
       'Created At',
     ]);
+    expect(workbook.getWorksheet('Missing Fields & Warnings')?.getRow(1).values).toEqual([
+      ,
+      'Field Name',
+      'Field Label',
+      'Warning Code',
+      'Warning Message',
+      'Source',
+    ]);
     expect(workbook.getWorksheet('Missing Fields & Warnings')).toBeDefined();
     expect(workbook.getWorksheet('Run Metadata')).toBeDefined();
     expect(workbook.getWorksheet('Source URLs')).toBeDefined();
@@ -134,6 +143,7 @@ describe('buildWorkbookBuffer', () => {
           restrictionDetails: 'Restricted to mock criteria',
         },
       ],
+      missingFieldsWarnings: [],
       nmaResults: [],
       trialResults: [],
     });
@@ -161,6 +171,7 @@ describe('buildWorkbookBuffer', () => {
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
+      missingFieldsWarnings: [],
       nmaResults: [],
       trialResults: [
         {
@@ -197,6 +208,7 @@ describe('buildWorkbookBuffer', () => {
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
+      missingFieldsWarnings: [],
       nmaResults: [
         {
           comparison: 'Mock drug vs standard of care',
@@ -243,6 +255,7 @@ describe('buildWorkbookBuffer', () => {
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
+      missingFieldsWarnings: [],
       nmaResults: [],
       trialResults: [],
     });
@@ -279,6 +292,7 @@ describe('buildWorkbookBuffer', () => {
         },
       ],
       htaResults: [],
+      missingFieldsWarnings: [],
       nmaResults: [],
       trialResults: [],
     });
@@ -319,6 +333,7 @@ describe('buildWorkbookBuffer', () => {
       ],
       guidelineResults: [],
       htaResults: [],
+      missingFieldsWarnings: [],
       nmaResults: [],
       trialResults: [],
     });
@@ -365,6 +380,7 @@ describe('buildWorkbookBuffer', () => {
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
+      missingFieldsWarnings: [],
       nmaResults: [],
       trialResults: [],
     });
@@ -404,6 +420,7 @@ describe('buildWorkbookBuffer', () => {
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
+      missingFieldsWarnings: [],
       nmaResults: [],
       trialResults: [],
     });
@@ -417,5 +434,43 @@ describe('buildWorkbookBuffer', () => {
     expect(row?.getCell(1).value).toBe('job_completed');
     expect(row?.getCell(2).value).toBe('{"status":"COMPLETED"}');
     expect(row?.getCell(3).value).toBe('2026-04-25T12:00:00.000Z');
+  });
+
+  it('writes Missing Fields & Warnings rows', async () => {
+    const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
+      economicEvaluation: [],
+      extractionAuditLog: [],
+      fieldProvenance: [],
+      guidelineResults: [],
+      htaResults: [],
+      missingFieldsWarnings: [
+        {
+          fieldName: 'hta_decision',
+          fieldLabel: 'HTA Decision',
+          warningCode: 'FIELD_NOT_PRESENT_IN_LATEST_DOCUMENT',
+          warningMessage: 'Decision phrase was not found in the latest document.',
+          source: 'field_extraction',
+        },
+      ],
+      nmaResults: [],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const missingFieldsWarningsSheet = workbook.getWorksheet(
+      'Missing Fields & Warnings',
+    );
+    const row = missingFieldsWarningsSheet?.getRow(2);
+
+    expect(row?.getCell(1).value).toBe('hta_decision');
+    expect(row?.getCell(2).value).toBe('HTA Decision');
+    expect(row?.getCell(3).value).toBe('FIELD_NOT_PRESENT_IN_LATEST_DOCUMENT');
+    expect(row?.getCell(4).value).toBe(
+      'Decision phrase was not found in the latest document.',
+    );
+    expect(row?.getCell(5).value).toBe('field_extraction');
   });
 });

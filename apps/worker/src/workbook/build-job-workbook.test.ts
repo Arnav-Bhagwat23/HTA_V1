@@ -2,7 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import ExcelJS from 'exceljs';
-import { JobMode, JobStatus, ParseStatus, PrismaClient, SourceType, UserRole } from '@prisma/client';
+import {
+  JobMode,
+  JobStatus,
+  ParseStatus,
+  PrismaClient,
+  SourceType,
+  UserRole,
+  WarningCode,
+} from '@prisma/client';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { buildJobWorkbook } from './build-job-workbook';
@@ -33,6 +41,8 @@ describe('buildJobWorkbook', () => {
           canonicalDrug: 'Mock drug',
           canonicalIndication: 'General indication',
           canonicalGeography: 'AU',
+          failureCode: WarningCode.UNKNOWN_ERROR,
+          failureMessage: 'Mock job-level failure for workbook coverage.',
           auditEvents: {
             create: [
               {
@@ -55,6 +65,21 @@ describe('buildJobWorkbook', () => {
                 publishedAt: new Date('2026-04-25T00:00:00.000Z'),
                 isSelected: true,
                 parseStatus: ParseStatus.PARSED,
+                warningCode: WarningCode.SOURCE_PARSE_FAILED,
+                warningMessage: 'Mock parser warning on selected document.',
+              },
+            ],
+          },
+          jobSources: {
+            create: [
+              {
+                sourceKey: 'pbac',
+                sourceLabel: 'PBAC',
+                sourceCountry: 'AU',
+                sourceType: SourceType.PDF,
+                status: 'FAILED',
+                errorCode: WarningCode.NO_RESULT_FOUND,
+                errorMessage: 'No alternative result was found.',
               },
             ],
           },
@@ -66,6 +91,8 @@ describe('buildJobWorkbook', () => {
                 localTempPath: 'pending://manual-upload.pdf',
                 uploadSize: 123,
                 parseStatus: ParseStatus.PENDING,
+                warningCode: WarningCode.UPLOAD_PARSE_FAILED,
+                warningMessage: 'Upload bytes not available yet.',
               },
             ],
           },
@@ -84,6 +111,7 @@ describe('buildJobWorkbook', () => {
                 fieldLabel: 'HTA Decision',
                 value: 'Recommended',
                 confidence: 0.7,
+                warningCode: WarningCode.FIELD_NOT_PRESENT_IN_LATEST_DOCUMENT,
                 sourcePage: '1',
                 evidenceSnippet: 'The medicine is recommended for listing.',
               },
@@ -165,6 +193,43 @@ describe('buildJobWorkbook', () => {
       );
       expect(typeof extractionAuditLogSheet?.getRow(2).getCell(3).value).toBe(
         'string',
+      );
+
+      const missingFieldsWarningsSheet = workbook.getWorksheet(
+        'Missing Fields & Warnings',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(2).getCell(3).value).toBe(
+        'UNKNOWN_ERROR',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(2).getCell(5).value).toBe(
+        'search_job',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(3).getCell(1).value).toBe(
+        'hta_decision',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(3).getCell(3).value).toBe(
+        'FIELD_NOT_PRESENT_IN_LATEST_DOCUMENT',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(3).getCell(5).value).toBe(
+        'field_extraction',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(4).getCell(3).value).toBe(
+        'SOURCE_PARSE_FAILED',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(4).getCell(5).value).toBe(
+        'document_considered',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(5).getCell(3).value).toBe(
+        'UPLOAD_PARSE_FAILED',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(5).getCell(5).value).toBe(
+        'uploaded_document',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(6).getCell(3).value).toBe(
+        'NO_RESULT_FOUND',
+      );
+      expect(missingFieldsWarningsSheet?.getRow(6).getCell(5).value).toBe(
+        'job_source',
       );
     } finally {
       await prisma.user.delete({

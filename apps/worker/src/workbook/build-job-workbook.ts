@@ -6,6 +6,7 @@ import type { DocumentsConsideredRow } from '../schema/documents-considered.sche
 import type { ExtractionAuditLogRow } from '../schema/extraction-audit-log.schema';
 import type { FieldProvenanceRow } from '../schema/field-provenance.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
+import type { MissingFieldsWarningsRow } from '../schema/missing-fields-warnings.schema';
 import { buildWorkbookBuffer } from './workbook-builder';
 
 export interface JobWorkbookResult {
@@ -147,6 +148,76 @@ const mapJobToExtractionAuditLogRows = (job: {
     createdAt: event.createdAt.toISOString(),
   }));
 
+const mapJobToMissingFieldsWarningsRows = (job: {
+  failureCode: string | null;
+  failureMessage: string | null;
+  fieldExtractions: Array<{
+    fieldName: string;
+    fieldLabel: string;
+    warningCode: string | null;
+  }>;
+  documentsConsidered: Array<{
+    warningCode: string | null;
+    warningMessage: string | null;
+  }>;
+  uploadedDocuments: Array<{
+    warningCode: string | null;
+    warningMessage: string | null;
+  }>;
+  jobSources: Array<{
+    errorCode: string | null;
+    errorMessage: string | null;
+  }>;
+}): MissingFieldsWarningsRow[] => [
+  ...(job.failureCode
+    ? [
+        {
+          fieldName: null,
+          fieldLabel: null,
+          warningCode: job.failureCode,
+          warningMessage: job.failureMessage,
+          source: 'search_job',
+        },
+      ]
+    : []),
+  ...job.fieldExtractions
+    .filter((field) => field.warningCode)
+    .map((field) => ({
+      fieldName: field.fieldName,
+      fieldLabel: field.fieldLabel,
+      warningCode: field.warningCode as string,
+      warningMessage: null,
+      source: 'field_extraction',
+    })),
+  ...job.documentsConsidered
+    .filter((document) => document.warningCode)
+    .map((document) => ({
+      fieldName: null,
+      fieldLabel: null,
+      warningCode: document.warningCode as string,
+      warningMessage: document.warningMessage,
+      source: 'document_considered',
+    })),
+  ...job.uploadedDocuments
+    .filter((document) => document.warningCode)
+    .map((document) => ({
+      fieldName: null,
+      fieldLabel: null,
+      warningCode: document.warningCode as string,
+      warningMessage: document.warningMessage,
+      source: 'uploaded_document',
+    })),
+  ...job.jobSources
+    .filter((source) => source.errorCode)
+    .map((source) => ({
+      fieldName: null,
+      fieldLabel: null,
+      warningCode: source.errorCode as string,
+      warningMessage: source.errorMessage,
+      source: 'job_source',
+    })),
+];
+
 export const buildJobWorkbook = async (
   searchJobId: string,
 ): Promise<JobWorkbookResult> => {
@@ -157,6 +228,8 @@ export const buildJobWorkbook = async (
       canonicalDrug: true,
       canonicalIndication: true,
       canonicalGeography: true,
+      failureCode: true,
+      failureMessage: true,
       fieldExtractions: {
         orderBy: [
           { fieldName: 'asc' },
@@ -183,6 +256,16 @@ export const buildJobWorkbook = async (
               createdAt: true,
             },
           },
+        },
+      },
+      jobSources: {
+        orderBy: [
+          { createdAt: 'asc' },
+          { id: 'asc' },
+        ],
+        select: {
+          errorCode: true,
+          errorMessage: true,
         },
       },
       documentsConsidered: {
@@ -254,6 +337,7 @@ export const buildJobWorkbook = async (
     fieldProvenance: mapJobToFieldProvenanceRows(job),
     guidelineResults: [],
     htaResults: [mapJobToHtaResultsRow(job)],
+    missingFieldsWarnings: mapJobToMissingFieldsWarningsRows(job),
     nmaResults: [],
     trialResults: [],
   });

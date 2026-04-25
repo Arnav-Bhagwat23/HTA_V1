@@ -6,6 +6,7 @@ import type { ExtractionAuditLogRow } from '../schema/extraction-audit-log.schem
 import type { FieldProvenanceRow } from '../schema/field-provenance.schema';
 import type { GuidelineResultsRow } from '../schema/guideline-results.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
+import type { MissingFieldsWarningsRow } from '../schema/missing-fields-warnings.schema';
 import type { NmaResultsRow } from '../schema/nma-results.schema';
 import type { TrialResultsRow } from '../schema/trial-results.schema';
 import { WORKBOOK_COLUMNS, WORKBOOK_SHEETS } from './workbook-schema';
@@ -17,6 +18,7 @@ export interface WorkbookBuildInput {
   fieldProvenance: FieldProvenanceRow[];
   guidelineResults: GuidelineResultsRow[];
   htaResults: HtaResultsRow[];
+  missingFieldsWarnings: MissingFieldsWarningsRow[];
   nmaResults: NmaResultsRow[];
   trialResults: TrialResultsRow[];
 }
@@ -79,6 +81,12 @@ export const buildWorkbookBuffer = async (
 
     if (sheetName === 'Extraction Audit Log') {
       for (const row of input.extractionAuditLog) {
+        worksheet.addRow(row);
+      }
+    }
+
+    if (sheetName === 'Missing Fields & Warnings') {
+      for (const row of input.missingFieldsWarnings) {
         worksheet.addRow(row);
       }
     }

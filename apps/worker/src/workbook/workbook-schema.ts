@@ -93,7 +93,13 @@ export const WORKBOOK_COLUMNS: Record<WorkbookSheetName, WorkbookColumn[]> = {
     { key: 'eventPayload', header: 'Event Payload' },
     { key: 'createdAt', header: 'Created At' },
   ],
-  'Missing Fields & Warnings': [],
+  'Missing Fields & Warnings': [
+    { key: 'fieldName', header: 'Field Name' },
+    { key: 'fieldLabel', header: 'Field Label' },
+    { key: 'warningCode', header: 'Warning Code' },
+    { key: 'warningMessage', header: 'Warning Message' },
+    { key: 'source', header: 'Source' },
+  ],
   'Run Metadata': [],
   'Source URLs': [],
 };
