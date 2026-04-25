@@ -2,9 +2,11 @@ import type { RoutedSourcePlan } from '../routing/source-router';
 
 import { NiceAdapter } from './nice.adapter';
 import type { SourceAdapter } from './base.adapter';
+import { GbaAdapter } from './gba.adapter';
 import { PbacAdapter } from './pbac.adapter';
 
 export const adapters: SourceAdapter[] = [
+  new GbaAdapter(),
   new NiceAdapter(),
   new PbacAdapter(),
 ];
