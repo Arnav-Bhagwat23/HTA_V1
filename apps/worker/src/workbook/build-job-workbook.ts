@@ -78,6 +78,7 @@ export const buildJobWorkbook = async (
   const workbookBuffer = await buildWorkbookBuffer({
     economicEvaluation: [],
     htaResults: [mapJobToHtaResultsRow(job)],
+    nmaResults: [],
     trialResults: [],
   });
 

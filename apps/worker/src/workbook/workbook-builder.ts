@@ -2,12 +2,14 @@ import ExcelJS from 'exceljs';
 
 import type { EconomicEvaluationRow } from '../schema/economic-evaluation.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
+import type { NmaResultsRow } from '../schema/nma-results.schema';
 import type { TrialResultsRow } from '../schema/trial-results.schema';
 import { WORKBOOK_COLUMNS, WORKBOOK_SHEETS } from './workbook-schema';
 
 export interface WorkbookBuildInput {
   economicEvaluation: EconomicEvaluationRow[];
   htaResults: HtaResultsRow[];
+  nmaResults: NmaResultsRow[];
   trialResults: TrialResultsRow[];
 }
 
@@ -33,6 +35,12 @@ export const buildWorkbookBuffer = async (
 
     if (sheetName === 'Trial Results') {
       for (const row of input.trialResults) {
+        worksheet.addRow(row);
+      }
+    }
+
+    if (sheetName === 'NMA Results') {
+      for (const row of input.nmaResults) {
         worksheet.addRow(row);
       }
     }

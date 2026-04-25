@@ -9,6 +9,7 @@ describe('buildWorkbookBuffer', () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
       htaResults: [],
+      nmaResults: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -42,6 +43,15 @@ describe('buildWorkbookBuffer', () => {
       'Result Summary',
     ]);
     expect(workbook.getWorksheet('NMA Results')).toBeDefined();
+    expect(workbook.getWorksheet('NMA Results')?.getRow(1).values).toEqual([
+      ,
+      'Comparison',
+      'Outcome',
+      'Effect Measure',
+      'Estimate',
+      'Credible Interval',
+      'Conclusion',
+    ]);
     expect(workbook.getWorksheet('Economic Evaluation')).toBeDefined();
     expect(workbook.getWorksheet('Economic Evaluation')?.getRow(1).values).toEqual([
       ,
@@ -74,6 +84,7 @@ describe('buildWorkbookBuffer', () => {
           restrictionDetails: 'Restricted to mock criteria',
         },
       ],
+      nmaResults: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -96,6 +107,7 @@ describe('buildWorkbookBuffer', () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
       htaResults: [],
+      nmaResults: [],
       trialResults: [
         {
           trialName: 'MOCK-301',
@@ -123,6 +135,38 @@ describe('buildWorkbookBuffer', () => {
     ]);
   });
 
+  it('writes one NMA Results row', async () => {
+    const buffer = await buildWorkbookBuffer({
+      economicEvaluation: [],
+      htaResults: [],
+      nmaResults: [
+        {
+          comparison: 'Mock drug vs standard of care',
+          outcome: 'Overall survival',
+          effectMeasure: 'Hazard ratio',
+          estimate: '0.78',
+          credibleInterval: '0.65 to 0.94',
+          conclusion: 'Mock drug favored in the NMA.',
+        },
+      ],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const nmaResultsSheet = workbook.getWorksheet('NMA Results');
+    expect(nmaResultsSheet?.getRow(2).values).toEqual([
+      ,
+      'Mock drug vs standard of care',
+      'Overall survival',
+      'Hazard ratio',
+      '0.78',
+      '0.65 to 0.94',
+      'Mock drug favored in the NMA.',
+    ]);
+  });
+
   it('writes one Economic Evaluation row', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [
@@ -137,6 +181,7 @@ describe('buildWorkbookBuffer', () => {
         },
       ],
       htaResults: [],
+      nmaResults: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();

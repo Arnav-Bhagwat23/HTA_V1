@@ -36,7 +36,14 @@ export const WORKBOOK_COLUMNS: Record<WorkbookSheetName, WorkbookColumn[]> = {
     { key: 'primaryEndpoint', header: 'Primary Endpoint' },
     { key: 'resultSummary', header: 'Result Summary' },
   ],
-  'NMA Results': [],
+  'NMA Results': [
+    { key: 'comparison', header: 'Comparison' },
+    { key: 'outcome', header: 'Outcome' },
+    { key: 'effectMeasure', header: 'Effect Measure' },
+    { key: 'estimate', header: 'Estimate' },
+    { key: 'credibleInterval', header: 'Credible Interval' },
+    { key: 'conclusion', header: 'Conclusion' },
+  ],
   'Economic Evaluation': [
     { key: 'modelType', header: 'Model Type' },
     { key: 'perspective', header: 'Perspective' },
