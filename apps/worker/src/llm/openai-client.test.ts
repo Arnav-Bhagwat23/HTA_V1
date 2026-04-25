@@ -54,3 +54,48 @@ describe('callOpenAI', () => {
     );
   });
 });
+
+describe('callOpenAIStructured', () => {
+  it('stub mode returns deterministic JSON', async () => {
+    process.env.LLM_MODE = 'stub';
+    const { callOpenAIStructured } = await import('./openai-client');
+
+    await expect(
+      callOpenAIStructured('test prompt', 'hta_results', {
+        type: 'object',
+      }),
+    ).resolves.toBe(
+      JSON.stringify({
+        drugName: null,
+        indication: null,
+        country: null,
+        htaDecision: null,
+        decisionDate: null,
+        restrictionDetails: null,
+      }),
+    );
+  });
+
+  it('missing API key throws in openai mode', async () => {
+    process.env.LLM_MODE = 'openai';
+    process.env.OPENAI_EXTRACTION_MODEL = 'gpt-test';
+    const { callOpenAIStructured } = await import('./openai-client');
+
+    await expect(
+      callOpenAIStructured('test prompt', 'hta_results', {
+        type: 'object',
+      }),
+    ).rejects.toThrow('OPENAI_API_KEY is required when LLM_MODE=openai.');
+  });
+
+  it('unsupported mode throws', async () => {
+    process.env.LLM_MODE = 'unsupported';
+    const { callOpenAIStructured } = await import('./openai-client');
+
+    await expect(
+      callOpenAIStructured('test prompt', 'hta_results', {
+        type: 'object',
+      }),
+    ).rejects.toThrow('Unsupported LLM_MODE: unsupported');
+  });
+});

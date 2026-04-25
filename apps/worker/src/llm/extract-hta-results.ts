@@ -1,8 +1,11 @@
 import type { ParsedDocument } from '@hta/shared';
 
 import type { HtaResultsRowOutput } from '../schema/hta-results.validation';
-import { htaResultsRowSchema } from '../schema/hta-results.validation';
-import { callOpenAI } from './openai-client';
+import {
+  htaResultsJsonSchema,
+  htaResultsRowSchema,
+} from '../schema/hta-results.validation';
+import { callOpenAIStructured } from './openai-client';
 
 export const extractHtaResults = async (
   parsedDocument: ParsedDocument,
@@ -24,7 +27,11 @@ Document:
 ${parsedDocument.rawText.slice(0, 15000)}
 `;
 
-  const response = await callOpenAI(prompt);
+  const response = await callOpenAIStructured(
+    prompt,
+    'hta_results',
+    htaResultsJsonSchema,
+  );
   const parsed = JSON.parse(response);
 
   return htaResultsRowSchema.parse(parsed);

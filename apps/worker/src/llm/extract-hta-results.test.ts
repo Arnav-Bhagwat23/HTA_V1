@@ -26,7 +26,7 @@ afterEach(() => {
 describe('extractHtaResults', () => {
   it('valid JSON passes', async () => {
     vi.doMock('./openai-client', () => ({
-      callOpenAI: vi.fn().mockResolvedValue(
+      callOpenAIStructured: vi.fn().mockResolvedValue(
         JSON.stringify({
           drugName: 'Mock drug',
           indication: 'General indication',
@@ -52,7 +52,7 @@ describe('extractHtaResults', () => {
 
   it('malformed JSON throws', async () => {
     vi.doMock('./openai-client', () => ({
-      callOpenAI: vi.fn().mockResolvedValue('{not valid json'),
+      callOpenAIStructured: vi.fn().mockResolvedValue('{not valid json'),
     }));
 
     const { extractHtaResults } = await import('./extract-hta-results');
@@ -62,7 +62,7 @@ describe('extractHtaResults', () => {
 
   it('invalid htaDecision throws', async () => {
     vi.doMock('./openai-client', () => ({
-      callOpenAI: vi.fn().mockResolvedValue(
+      callOpenAIStructured: vi.fn().mockResolvedValue(
         JSON.stringify({
           drugName: 'Mock drug',
           indication: 'General indication',
@@ -81,7 +81,7 @@ describe('extractHtaResults', () => {
 
   it('missing fields throw', async () => {
     vi.doMock('./openai-client', () => ({
-      callOpenAI: vi.fn().mockResolvedValue(
+      callOpenAIStructured: vi.fn().mockResolvedValue(
         JSON.stringify({
           drugName: 'Mock drug',
           indication: 'General indication',
