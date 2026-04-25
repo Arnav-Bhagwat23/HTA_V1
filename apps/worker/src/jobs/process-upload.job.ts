@@ -7,6 +7,7 @@ import { Job } from 'bullmq';
 import { extractFieldsFromParsedDocument } from '../extraction/extract-fields';
 import { prisma } from '../lib/prisma';
 import { parsePdfBuffer } from '../parsing/pdf-parser';
+import { buildJobWorkbook } from '../workbook/build-job-workbook';
 
 export interface ProcessUploadJobData {
   searchJobId: string;
@@ -114,6 +115,44 @@ const markCsvOutputReady = async (
       jobId: searchJobId,
       outputType: 'csv',
       mimeType: 'text/csv; charset=utf-8',
+      isDownloadable: true,
+    },
+  });
+};
+
+const markXlsxOutputReady = async (
+  searchJobId: string,
+): Promise<void> => {
+  const existingOutput = await prisma.jobOutput.findFirst({
+    where: {
+      jobId: searchJobId,
+      outputType: 'xlsx',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const workbookOutput = await buildJobWorkbook(searchJobId);
+
+  if (existingOutput) {
+    await prisma.jobOutput.update({
+      where: { id: existingOutput.id },
+      data: {
+        storagePath: workbookOutput.storagePath,
+        mimeType: workbookOutput.mimeType,
+        isDownloadable: true,
+      },
+    });
+    return;
+  }
+
+  await prisma.jobOutput.create({
+    data: {
+      jobId: searchJobId,
+      outputType: 'xlsx',
+      storagePath: workbookOutput.storagePath,
+      mimeType: workbookOutput.mimeType,
       isDownloadable: true,
     },
   });
@@ -279,6 +318,7 @@ export const processUploadJob = async (
 
     if (successfulUploadCount > 0) {
       await markCsvOutputReady(searchJobId);
+      await markXlsxOutputReady(searchJobId);
     }
 
     await markUploadJobCompleted(

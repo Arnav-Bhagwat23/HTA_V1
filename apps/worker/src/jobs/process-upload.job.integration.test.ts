@@ -121,12 +121,18 @@ describe('processUploadJob', () => {
       expect(completedJob?.fieldExtractions.length).toBeGreaterThan(0);
       expect(completedJob?.fieldExtractions.every((field) => field.uploadedDocumentId === uploadedDocument.id))
         .toBe(true);
-      expect(completedJob?.jobOutputs).toEqual([
-        {
-          outputType: 'csv',
-          isDownloadable: true,
-        },
-      ]);
+      expect(completedJob?.jobOutputs).toEqual(
+        expect.arrayContaining([
+          {
+            outputType: 'csv',
+            isDownloadable: true,
+          },
+          {
+            outputType: 'xlsx',
+            isDownloadable: true,
+          },
+        ]),
+      );
       expect(completedJob?.auditEvents.map((event) => event.eventType)).toEqual(
         expect.arrayContaining([
           'upload_processing_started',

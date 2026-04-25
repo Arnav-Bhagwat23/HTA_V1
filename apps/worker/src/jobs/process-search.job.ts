@@ -8,6 +8,7 @@ import { prisma } from '../lib/prisma';
 import { normalizeQueryWithFallback } from '../normalizer/normalize-query';
 import { parsePdfDocument } from '../parsing/pdf-parser';
 import { routeSourcePlans } from '../routing/source-router';
+import { buildJobWorkbook } from '../workbook/build-job-workbook';
 
 export interface ProcessSearchJobData {
   searchJobId: string;
@@ -154,6 +155,22 @@ const markCsvOutputReady = async (
       jobId: searchJobId,
       outputType: 'csv',
       mimeType: 'text/csv; charset=utf-8',
+      isDownloadable: true,
+    },
+  });
+};
+
+const markXlsxOutputReady = async (
+  searchJobId: string,
+): Promise<void> => {
+  const workbookOutput = await buildJobWorkbook(searchJobId);
+
+  await prisma.jobOutput.create({
+    data: {
+      jobId: searchJobId,
+      outputType: 'xlsx',
+      storagePath: workbookOutput.storagePath,
+      mimeType: workbookOutput.mimeType,
       isDownloadable: true,
     },
   });
@@ -341,6 +358,7 @@ export const processSearchJob = async (
 
     if (hasSelectedDocument) {
       await markCsvOutputReady(searchJobId);
+      await markXlsxOutputReady(searchJobId);
     }
 
     await markJobCompleted(

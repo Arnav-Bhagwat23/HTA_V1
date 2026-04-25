@@ -134,12 +134,18 @@ describe('processSearchJob AU fixture path', () => {
         completedJob?.fieldExtractions.find((field) => field.fieldName === 'hta_decision')
           ?.evidenceSnippet,
       ).toContain('recommended for listing');
-      expect(completedJob?.jobOutputs).toEqual([
-        {
-          outputType: 'csv',
-          isDownloadable: true,
-        },
-      ]);
+      expect(completedJob?.jobOutputs).toEqual(
+        expect.arrayContaining([
+          {
+            outputType: 'csv',
+            isDownloadable: true,
+          },
+          {
+            outputType: 'xlsx',
+            isDownloadable: true,
+          },
+        ]),
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },
@@ -251,12 +257,18 @@ describe('processSearchJob UK fixture path', () => {
         completedJob?.fieldExtractions.find((field) => field.fieldName === 'hta_decision')
           ?.evidenceSnippet,
       ).toContain('recommended for listing');
-      expect(completedJob?.jobOutputs).toEqual([
-        {
-          outputType: 'csv',
-          isDownloadable: true,
-        },
-      ]);
+      expect(completedJob?.jobOutputs).toEqual(
+        expect.arrayContaining([
+          {
+            outputType: 'csv',
+            isDownloadable: true,
+          },
+          {
+            outputType: 'xlsx',
+            isDownloadable: true,
+          },
+        ]),
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },
@@ -368,12 +380,18 @@ describe('processSearchJob DE fixture path', () => {
         completedJob?.fieldExtractions.find((field) => field.fieldName === 'hta_decision')
           ?.evidenceSnippet,
       ).toContain('recommended for listing');
-      expect(completedJob?.jobOutputs).toEqual([
-        {
-          outputType: 'csv',
-          isDownloadable: true,
-        },
-      ]);
+      expect(completedJob?.jobOutputs).toEqual(
+        expect.arrayContaining([
+          {
+            outputType: 'csv',
+            isDownloadable: true,
+          },
+          {
+            outputType: 'xlsx',
+            isDownloadable: true,
+          },
+        ]),
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },
@@ -485,12 +503,18 @@ describe('processSearchJob FR fixture path', () => {
         completedJob?.fieldExtractions.find((field) => field.fieldName === 'hta_decision')
           ?.evidenceSnippet,
       ).toContain('recommended for listing');
-      expect(completedJob?.jobOutputs).toEqual([
-        {
-          outputType: 'csv',
-          isDownloadable: true,
-        },
-      ]);
+      expect(completedJob?.jobOutputs).toEqual(
+        expect.arrayContaining([
+          {
+            outputType: 'csv',
+            isDownloadable: true,
+          },
+          {
+            outputType: 'xlsx',
+            isDownloadable: true,
+          },
+        ]),
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },
@@ -602,12 +626,18 @@ describe('processSearchJob IT fixture path', () => {
         completedJob?.fieldExtractions.find((field) => field.fieldName === 'hta_decision')
           ?.evidenceSnippet,
       ).toContain('recommended for listing');
-      expect(completedJob?.jobOutputs).toEqual([
-        {
-          outputType: 'csv',
-          isDownloadable: true,
-        },
-      ]);
+      expect(completedJob?.jobOutputs).toEqual(
+        expect.arrayContaining([
+          {
+            outputType: 'csv',
+            isDownloadable: true,
+          },
+          {
+            outputType: 'xlsx',
+            isDownloadable: true,
+          },
+        ]),
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },
@@ -719,12 +749,18 @@ describe('processSearchJob ES fixture path', () => {
         completedJob?.fieldExtractions.find((field) => field.fieldName === 'hta_decision')
           ?.evidenceSnippet,
       ).toContain('recommended for listing');
-      expect(completedJob?.jobOutputs).toEqual([
-        {
-          outputType: 'csv',
-          isDownloadable: true,
-        },
-      ]);
+      expect(completedJob?.jobOutputs).toEqual(
+        expect.arrayContaining([
+          {
+            outputType: 'csv',
+            isDownloadable: true,
+          },
+          {
+            outputType: 'xlsx',
+            isDownloadable: true,
+          },
+        ]),
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },
@@ -836,12 +872,18 @@ describe('processSearchJob JP fixture path', () => {
         completedJob?.fieldExtractions.find((field) => field.fieldName === 'hta_decision')
           ?.evidenceSnippet,
       ).toContain('recommended for listing');
-      expect(completedJob?.jobOutputs).toEqual([
-        {
-          outputType: 'csv',
-          isDownloadable: true,
-        },
-      ]);
+      expect(completedJob?.jobOutputs).toEqual(
+        expect.arrayContaining([
+          {
+            outputType: 'csv',
+            isDownloadable: true,
+          },
+          {
+            outputType: 'xlsx',
+            isDownloadable: true,
+          },
+        ]),
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },
