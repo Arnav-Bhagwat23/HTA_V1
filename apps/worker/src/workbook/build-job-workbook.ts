@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { prisma } from '../lib/prisma';
+import type { DocumentsConsideredRow } from '../schema/documents-considered.schema';
 import type { FieldProvenanceRow } from '../schema/field-provenance.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
 import { buildWorkbookBuffer } from './workbook-builder';
@@ -76,6 +77,59 @@ const mapJobToFieldProvenanceRows = (job: {
       null,
   }));
 
+const mapJobToDocumentsConsideredRows = (job: {
+  documentsConsidered: Array<{
+    id: string;
+    documentTitle: string;
+    jobSource: {
+      sourceLabel: string;
+    } | null;
+    sourceType: string;
+    sourceCountry: string | null;
+    documentUrl: string | null;
+    publishedAt: Date | null;
+    isSelected: boolean;
+    parseStatus: string;
+    warningCode: string | null;
+    warningMessage: string | null;
+  }>;
+  uploadedDocuments: Array<{
+    id: string;
+    originalFilename: string;
+    parseStatus: string;
+    warningCode: string | null;
+    warningMessage: string | null;
+    createdAt: Date;
+  }>;
+}): DocumentsConsideredRow[] => [
+  ...job.documentsConsidered.map((document) => ({
+    documentId: document.id,
+    documentTitle: document.documentTitle,
+    sourceName: document.jobSource?.sourceLabel ?? null,
+    sourceType: document.sourceType.toLowerCase(),
+    sourceCountry: document.sourceCountry,
+    documentUrl: document.documentUrl,
+    publishedAt: document.publishedAt?.toISOString() ?? null,
+    isSelected: document.isSelected,
+    parseStatus: document.parseStatus,
+    warningCode: document.warningCode,
+    warningMessage: document.warningMessage,
+  })),
+  ...job.uploadedDocuments.map((document) => ({
+    documentId: document.id,
+    documentTitle: document.originalFilename,
+    sourceName: 'User Upload',
+    sourceType: 'upload',
+    sourceCountry: null,
+    documentUrl: null,
+    publishedAt: document.createdAt.toISOString(),
+    isSelected: true,
+    parseStatus: document.parseStatus,
+    warningCode: document.warningCode,
+    warningMessage: document.warningMessage,
+  })),
+];
+
 export const buildJobWorkbook = async (
   searchJobId: string,
 ): Promise<JobWorkbookResult> => {
@@ -114,6 +168,43 @@ export const buildJobWorkbook = async (
           },
         },
       },
+      documentsConsidered: {
+        orderBy: [
+          { createdAt: 'asc' },
+          { id: 'asc' },
+        ],
+        select: {
+          id: true,
+          documentTitle: true,
+          jobSource: {
+            select: {
+              sourceLabel: true,
+            },
+          },
+          sourceType: true,
+          sourceCountry: true,
+          documentUrl: true,
+          publishedAt: true,
+          isSelected: true,
+          parseStatus: true,
+          warningCode: true,
+          warningMessage: true,
+        },
+      },
+      uploadedDocuments: {
+        orderBy: [
+          { createdAt: 'asc' },
+          { id: 'asc' },
+        ],
+        select: {
+          id: true,
+          originalFilename: true,
+          parseStatus: true,
+          warningCode: true,
+          warningMessage: true,
+          createdAt: true,
+        },
+      },
     },
   });
 
@@ -129,6 +220,7 @@ export const buildJobWorkbook = async (
   );
   const storagePath = path.join(outputDirectory, 'hta-output.xlsx');
   const workbookBuffer = await buildWorkbookBuffer({
+    documentsConsidered: mapJobToDocumentsConsideredRows(job),
     economicEvaluation: [],
     fieldProvenance: mapJobToFieldProvenanceRows(job),
     guidelineResults: [],

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import ExcelJS from 'exceljs';
-import { JobMode, JobStatus, PrismaClient, UserRole } from '@prisma/client';
+import { JobMode, JobStatus, ParseStatus, PrismaClient, SourceType, UserRole } from '@prisma/client';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { buildJobWorkbook } from './build-job-workbook';
@@ -33,6 +33,32 @@ describe('buildJobWorkbook', () => {
           canonicalDrug: 'Mock drug',
           canonicalIndication: 'General indication',
           canonicalGeography: 'AU',
+          documentsConsidered: {
+            create: [
+              {
+                documentTitle:
+                  'PBAC Public Summary Document - Mock drug - general indication',
+                sourceType: SourceType.PDF,
+                sourceCountry: 'AU',
+                documentUrl:
+                  'https://example.com/mock-pbac-public-summary-document.pdf',
+                publishedAt: new Date('2026-04-25T00:00:00.000Z'),
+                isSelected: true,
+                parseStatus: ParseStatus.PARSED,
+              },
+            ],
+          },
+          uploadedDocuments: {
+            create: [
+              {
+                originalFilename: 'manual-upload.pdf',
+                mimeType: 'application/pdf',
+                localTempPath: 'pending://manual-upload.pdf',
+                uploadSize: 123,
+                parseStatus: ParseStatus.PENDING,
+              },
+            ],
+          },
           fieldExtractions: {
             create: [
               {
@@ -97,6 +123,25 @@ describe('buildJobWorkbook', () => {
       );
       expect(fieldProvenanceSheet?.getRow(3).getCell(3).value).toBe(
         'Recommended',
+      );
+
+      const documentsConsideredSheet = workbook.getWorksheet(
+        'Documents Considered',
+      );
+      expect(documentsConsideredSheet?.getRow(2).getCell(2).value).toBe(
+        'PBAC Public Summary Document - Mock drug - general indication',
+      );
+      expect(documentsConsideredSheet?.getRow(2).getCell(4).value).toBe('pdf');
+      expect(documentsConsideredSheet?.getRow(2).getCell(5).value).toBe('AU');
+      expect(documentsConsideredSheet?.getRow(2).getCell(8).value).toBe(true);
+      expect(documentsConsideredSheet?.getRow(3).getCell(2).value).toBe(
+        'manual-upload.pdf',
+      );
+      expect(documentsConsideredSheet?.getRow(3).getCell(3).value).toBe(
+        'User Upload',
+      );
+      expect(documentsConsideredSheet?.getRow(3).getCell(4).value).toBe(
+        'upload',
       );
     } finally {
       await prisma.user.delete({

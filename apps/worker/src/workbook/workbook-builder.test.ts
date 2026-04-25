@@ -7,6 +7,7 @@ import { WORKBOOK_SHEETS } from './workbook-schema';
 describe('buildWorkbookBuffer', () => {
   it('creates all expected sheets and HTA Results headers', async () => {
     const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
       economicEvaluation: [],
       fieldProvenance: [],
       guidelineResults: [],
@@ -89,6 +90,20 @@ describe('buildWorkbookBuffer', () => {
       'Published At',
     ]);
     expect(workbook.getWorksheet('Documents Considered')).toBeDefined();
+    expect(workbook.getWorksheet('Documents Considered')?.getRow(1).values).toEqual([
+      ,
+      'Document ID',
+      'Document Title',
+      'Source Name',
+      'Source Type',
+      'Source Country',
+      'Document URL',
+      'Published At',
+      'Is Selected',
+      'Parse Status',
+      'Warning Code',
+      'Warning Message',
+    ]);
     expect(workbook.getWorksheet('Extraction Audit Log')).toBeDefined();
     expect(workbook.getWorksheet('Missing Fields & Warnings')).toBeDefined();
     expect(workbook.getWorksheet('Run Metadata')).toBeDefined();
@@ -97,6 +112,7 @@ describe('buildWorkbookBuffer', () => {
 
   it('writes one HTA Results row', async () => {
     const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
       economicEvaluation: [],
       fieldProvenance: [],
       guidelineResults: [],
@@ -131,6 +147,7 @@ describe('buildWorkbookBuffer', () => {
 
   it('writes one Trial Results row', async () => {
     const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
       economicEvaluation: [],
       fieldProvenance: [],
       guidelineResults: [],
@@ -165,6 +182,7 @@ describe('buildWorkbookBuffer', () => {
 
   it('writes one NMA Results row', async () => {
     const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
       economicEvaluation: [],
       fieldProvenance: [],
       guidelineResults: [],
@@ -199,6 +217,7 @@ describe('buildWorkbookBuffer', () => {
 
   it('writes one Economic Evaluation row', async () => {
     const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
       economicEvaluation: [
         {
           modelType: 'Partitioned survival model',
@@ -234,6 +253,7 @@ describe('buildWorkbookBuffer', () => {
 
   it('writes one Guideline Results row', async () => {
     const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
       economicEvaluation: [],
       fieldProvenance: [],
       guidelineResults: [
@@ -268,6 +288,7 @@ describe('buildWorkbookBuffer', () => {
 
   it('writes Field Provenance rows', async () => {
     const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
       economicEvaluation: [],
       fieldProvenance: [
         {
@@ -307,5 +328,51 @@ describe('buildWorkbookBuffer', () => {
       'The medicine is recommended for listing.',
     );
     expect(row?.getCell(10).value).toBe('2026-04-25T00:00:00.000Z');
+  });
+
+  it('writes Documents Considered rows', async () => {
+    const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [
+        {
+          documentId: 'doc-1',
+          documentTitle: 'Mock HTA Document',
+          sourceName: 'PBAC',
+          sourceType: 'pdf',
+          sourceCountry: 'AU',
+          documentUrl: 'https://example.com/mock.pdf',
+          publishedAt: '2026-04-25T00:00:00.000Z',
+          isSelected: true,
+          parseStatus: 'PARSED',
+          warningCode: null,
+          warningMessage: null,
+        },
+      ],
+      economicEvaluation: [],
+      fieldProvenance: [],
+      guidelineResults: [],
+      htaResults: [],
+      nmaResults: [],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const documentsConsideredSheet = workbook.getWorksheet(
+      'Documents Considered',
+    );
+    const row = documentsConsideredSheet?.getRow(2);
+
+    expect(row?.getCell(1).value).toBe('doc-1');
+    expect(row?.getCell(2).value).toBe('Mock HTA Document');
+    expect(row?.getCell(3).value).toBe('PBAC');
+    expect(row?.getCell(4).value).toBe('pdf');
+    expect(row?.getCell(5).value).toBe('AU');
+    expect(row?.getCell(6).value).toBe('https://example.com/mock.pdf');
+    expect(row?.getCell(7).value).toBe('2026-04-25T00:00:00.000Z');
+    expect(row?.getCell(8).value).toBe(true);
+    expect(row?.getCell(9).value).toBe('PARSED');
+    expect(row?.getCell(10).value).toBeNull();
+    expect(row?.getCell(11).value).toBeNull();
   });
 });
