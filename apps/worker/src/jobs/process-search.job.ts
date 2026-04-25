@@ -362,11 +362,6 @@ export const processSearchJob = async (
       normalizedQuery,
     );
 
-    if (hasSelectedDocument) {
-      await markCsvOutputReady(searchJobId);
-      await markXlsxOutputReady(searchJobId);
-    }
-
     await markJobCompleted(
       searchJobId,
       hasSelectedDocument ? JobStatus.COMPLETED : JobStatus.PARTIAL,
@@ -374,6 +369,11 @@ export const processSearchJob = async (
         hasSelectedDocument,
       },
     );
+
+    if (hasSelectedDocument) {
+      await markCsvOutputReady(searchJobId);
+      await markXlsxOutputReady(searchJobId);
+    }
   } catch (error) {
     const failureMessage =
       error instanceof Error ? error.message : 'Unknown worker failure.';

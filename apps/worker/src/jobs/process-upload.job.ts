@@ -322,11 +322,6 @@ export const processUploadJob = async (
       }
     }
 
-    if (successfulUploadCount > 0) {
-      await markCsvOutputReady(searchJobId);
-      await markXlsxOutputReady(searchJobId);
-    }
-
     await markUploadJobCompleted(
       searchJobId,
       successfulUploadCount > 0 ? JobStatus.COMPLETED : JobStatus.PARTIAL,
@@ -335,6 +330,11 @@ export const processUploadJob = async (
         uploadedDocumentCount: searchJob.uploadedDocuments.length,
       },
     );
+
+    if (successfulUploadCount > 0) {
+      await markCsvOutputReady(searchJobId);
+      await markXlsxOutputReady(searchJobId);
+    }
   } catch (error) {
     const failureMessage =
       error instanceof Error ? error.message : 'Unknown upload worker failure.';

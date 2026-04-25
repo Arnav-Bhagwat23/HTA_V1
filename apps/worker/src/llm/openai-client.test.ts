@@ -66,11 +66,11 @@ describe('callOpenAIStructured', () => {
       }),
     ).resolves.toBe(
       JSON.stringify({
-        drugName: null,
-        indication: null,
-        country: null,
-        htaDecision: null,
-        decisionDate: null,
+        drugName: 'Mock drug',
+        indication: 'General indication',
+        country: 'AU',
+        htaDecision: 'Recommended',
+        decisionDate: '2026-04-24',
         restrictionDetails: null,
       }),
     );

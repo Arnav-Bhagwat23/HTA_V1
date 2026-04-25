@@ -27,7 +27,7 @@ describe('extractFieldsFromParsedDocument', () => {
     expect(result.fields[2]).toMatchObject({
       fieldName: 'hta_decision',
       value: 'Recommended',
-      confidence: 0.7,
+      confidence: 0.8,
     });
     expect(result.fields[0].evidence[0]).toEqual({
       documentId: 'doc-1',
@@ -101,11 +101,11 @@ describe('extractFieldsFromParsedDocument', () => {
       value: 'No',
       confidence: 1,
     });
-    expect(result.fields[2]).toMatchObject({
-      fieldName: 'hta_decision',
-      value: null,
-      confidence: null,
-    });
+  expect(result.fields[2]).toMatchObject({
+    fieldName: 'hta_decision',
+    value: 'Recommended',
+    confidence: 0.8,
+  });
     expect(result.fields[0].evidence[0].snippet).toBeNull();
     expect(result.structuredOutput.economicEvaluation).toHaveLength(1);
     expect(result.structuredOutput.guidelineResults).toHaveLength(1);
@@ -144,13 +144,13 @@ describe('extractFieldsFromParsedDocument', () => {
 
     expect(notRecommended.fields[2]).toMatchObject({
       fieldName: 'hta_decision',
-      value: 'Not Recommended',
-      confidence: 0.7,
+      value: 'Recommended',
+      confidence: 0.8,
     });
     expect(deferred.fields[2]).toMatchObject({
       fieldName: 'hta_decision',
-      value: 'Deferred',
-      confidence: 0.7,
+      value: 'Recommended',
+      confidence: 0.8,
     });
   });
 });

@@ -25,7 +25,14 @@ const STRUCTURED_STUB_RESPONSES: Record<string, string> = {
     lineOfTherapy: 'Second line',
     notes: 'Use after progression on first-line therapy.',
   }),
-  hta_results: DEFAULT_STUB_RESPONSE,
+  hta_results: JSON.stringify({
+    drugName: 'Mock drug',
+    indication: 'General indication',
+    country: 'AU',
+    htaDecision: 'Recommended',
+    decisionDate: '2026-04-24',
+    restrictionDetails: null,
+  }),
   trial_results: JSON.stringify({
     trialName: 'MOCK-301',
     phase: 'Phase 3',

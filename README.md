@@ -2,10 +2,11 @@
 
 HTA_V1 is a monorepo for a Health Technology Assessment landscaping application.
 
-`v0.2.0` is the current handoff release. It proves both required product branches:
+`v0.3.0` is the current workbook-output handoff release. It proves both required product branches:
 - automatic retrieval/extraction for every supported automatic country
 - manual upload/extraction for unsupported geographies
 - workbook download is now the default output path, with CSV preserved as an optional secondary export
+- all main workbook sheets are populated in stub-mode end-to-end verification
 
 The repo is structured as a monolith-plus-worker system:
 - `apps/web` owns API routes, auth, and user-facing job access
@@ -13,7 +14,7 @@ The repo is structured as a monolith-plus-worker system:
 - `packages/shared` holds shared contracts used by both sides
 - `prisma` defines the database model and migrations
 
-## v0.2.0 Summary
+## v0.3.0 Summary
 
 What is proven in this release:
 - all 7 supported automatic countries are covered by adapters:
@@ -26,9 +27,11 @@ What is proven in this release:
   - `JP` / `Japan HTA`
 - manual upload path works end to end
 - async queue + worker flow works
+- structured LLM normalization and structured LLM extraction are wired with fallback-safe behavior
 - preview, workbook download, and CSV output are driven from persisted state
+- workbook generation now populates all main sheets plus supporting sheets
 - worker integration tests cover every supported automatic geography
-- test suite currently passes with `115` tests
+- test suite currently passes with `165` tests
 
 ## Supported Countries
 
@@ -118,15 +121,27 @@ The manual-upload branch is also wired end to end:
 
 - populated workbook sheets currently include:
   - `HTA Results`
+  - `Trial Results`
+  - `NMA Results`
+  - `Economic Evaluation`
+  - `Guideline Results`
   - `Field Provenance`
   - `Documents Considered`
   - `Extraction Audit Log`
   - `Missing Fields & Warnings`
   - `Run Metadata`
   - `Source URLs`
-- `Trial Results`, `NMA Results`, `Economic Evaluation`, and `Guideline Results`
-  are scaffolded in the workbook schema and builder, but are not yet populated
-  from persisted extraction output
+- workbook verification has been run end to end in stub mode and confirmed row population in:
+  - `HTA Results`
+  - `Trial Results`
+  - `NMA Results`
+  - `Economic Evaluation`
+  - `Guideline Results`
+  - `Field Provenance`
+  - `Documents Considered`
+  - `Extraction Audit Log`
+  - `Run Metadata`
+  - `Source URLs`
 
 ## Proven Example Queries
 
@@ -425,7 +440,7 @@ npm test
 
 Current status:
 - `31` test files
-- `161` passing tests
+- `165` passing tests
 
 ## Known Limitations
 
@@ -452,7 +467,7 @@ The repo intentionally follows these rules:
 
 This repo is no longer just scaffolding.
 
-At `v0.2.0`, it demonstrates a real persisted async job flow with:
+At `v0.3.0`, it demonstrates a real persisted async job flow with:
 - queueing
 - worker execution
 - source routing
