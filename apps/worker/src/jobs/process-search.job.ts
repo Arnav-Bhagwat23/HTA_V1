@@ -5,7 +5,7 @@ import { Job } from 'bullmq';
 import { getAdapterBySourceKey } from '../adapters/registry';
 import { extractFieldsFromParsedDocument } from '../extraction/extract-fields';
 import { prisma } from '../lib/prisma';
-import { normalizeQuery } from '../normalizer/normalize-query';
+import { normalizeQueryWithFallback } from '../normalizer/normalize-query';
 import { parsePdfDocument } from '../parsing/pdf-parser';
 import { routeSourcePlans } from '../routing/source-router';
 
@@ -315,7 +315,7 @@ export const processSearchJob = async (
   try {
     await markJobStarted(searchJobId);
 
-    const normalizedQuery = normalizeQuery(searchJob.rawQuery ?? '');
+    const normalizedQuery = await normalizeQueryWithFallback(searchJob.rawQuery ?? '');
 
     await persistNormalizedQuery(searchJobId, normalizedQuery);
 

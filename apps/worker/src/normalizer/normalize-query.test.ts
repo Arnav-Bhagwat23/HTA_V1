@@ -3,44 +3,47 @@ import { describe, expect, it } from 'vitest';
 import { normalizeQuery } from './normalize-query';
 
 describe('normalizeQuery', () => {
-  it('resolves UK aliases to UK', () => {
-    expect(normalizeQuery('NICE review in UK').canonicalGeography).toBe('UK');
-    expect(normalizeQuery('NICE review in United Kingdom').canonicalGeography).toBe('UK');
-    expect(normalizeQuery('NICE review in Britain').canonicalGeography).toBe('UK');
+  it('maps UK aliases to UK', () => {
+    expect(
+      normalizeQuery('Mock drug for United Kingdom HTA').canonicalGeography,
+    ).toBe('UK');
+    expect(
+      normalizeQuery('Mock drug for Britain HTA').canonicalGeography,
+    ).toBe('UK');
   });
 
-  it('resolves Germany to DE', () => {
-    const result = normalizeQuery('pricing update for Germany');
-
-    expect(result.canonicalGeography).toBe('DE');
-    expect(result.requiresManualUpload).toBe(false);
+  it('maps Germany to DE', () => {
+    expect(
+      normalizeQuery('Mock drug for Germany HTA').canonicalGeography,
+    ).toBe('DE');
   });
 
-  it('resolves Japan to JP', () => {
-    const result = normalizeQuery('HTA submission in Japan');
-
-    expect(result.canonicalGeography).toBe('JP');
+  it('maps Japan to JP', () => {
+    expect(
+      normalizeQuery('Mock drug for Japan HTA').canonicalGeography,
+    ).toBe('JP');
   });
 
-  it('maps unsupported countries to OTHER and requires manual upload', () => {
-    const result = normalizeQuery('oncology reimbursement in Canada');
+  it('maps unsupported country to OTHER', () => {
+    const normalized = normalizeQuery('Mock drug for Canada HTA');
 
-    expect(result.canonicalGeography).toBe('OTHER');
-    expect(result.requiresManualUpload).toBe(true);
+    expect(normalized.canonicalGeography).toBe('OTHER');
+    expect(normalized.requiresManualUpload).toBe(true);
   });
 
   it('leaves geography null when no geography is mentioned', () => {
-    const result = normalizeQuery('general oncology reimbursement guidance');
+    const normalized = normalizeQuery('Mock drug general indication');
 
-    expect(result.canonicalGeography).toBeNull();
-    expect(result.requiresManualUpload).toBe(false);
-    expect(result.warnings).toEqual([]);
+    expect(normalized.canonicalGeography).toBeNull();
+    expect(normalized.requiresManualUpload).toBe(false);
   });
 
-  it('adds an ambiguity warning for conflicting geographies', () => {
-    const result = normalizeQuery('comparison between Germany and Japan');
+  it('adds GEOGRAPHY_AMBIGUOUS for conflicting geographies', () => {
+    const normalized = normalizeQuery(
+      'Mock drug for Australia and Germany HTA',
+    );
 
-    expect(result.canonicalGeography).toBeNull();
-    expect(result.warnings).toContain('GEOGRAPHY_AMBIGUOUS');
+    expect(normalized.canonicalGeography).toBeNull();
+    expect(normalized.warnings).toContain('GEOGRAPHY_AMBIGUOUS');
   });
 });

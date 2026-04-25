@@ -1,6 +1,8 @@
 import type { CanonicalGeography, NormalizedQuery } from '@hta/shared';
 import { requiresManualUploadForGeography } from '@hta/shared';
 
+import { normalizeQueryWithLlm } from '../llm/normalize-query-with-llm';
+
 interface GeographyMatcher {
   geography: CanonicalGeography;
   aliases: string[];
@@ -88,4 +90,14 @@ export const normalizeQuery = (rawQuery: string): NormalizedQuery => {
     requiresManualUpload: requiresManualUploadForGeography(canonicalGeography),
     warnings,
   };
+};
+
+export const normalizeQueryWithFallback = async (
+  rawQuery: string,
+): Promise<NormalizedQuery> => {
+  try {
+    return await normalizeQueryWithLlm(rawQuery);
+  } catch {
+    return normalizeQuery(rawQuery);
+  }
 };
