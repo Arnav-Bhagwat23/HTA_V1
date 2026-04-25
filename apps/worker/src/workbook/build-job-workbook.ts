@@ -390,7 +390,7 @@ export const buildJobWorkbook = async (
     await loadStructuredExtractionArtifact(searchJobId);
   const workbookBuffer = await buildWorkbookBuffer({
     documentsConsidered: mapJobToDocumentsConsideredRows(job),
-    economicEvaluation: [],
+    economicEvaluation: structuredExtractionArtifact?.economicEvaluation ?? [],
     extractionAuditLog: mapJobToExtractionAuditLogRows(job),
     fieldProvenance: mapJobToFieldProvenanceRows(job),
     guidelineResults: [],

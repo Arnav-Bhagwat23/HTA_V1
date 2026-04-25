@@ -8,6 +8,15 @@ const DEFAULT_STUB_RESPONSE = JSON.stringify({
 });
 
 const STRUCTURED_STUB_RESPONSES: Record<string, string> = {
+  economic_evaluation: JSON.stringify({
+    modelType: 'Partitioned survival model',
+    perspective: 'Payer',
+    timeHorizon: 'Lifetime',
+    comparator: 'Standard of care',
+    icer: '$45,000/QALY',
+    costEffectivenessConclusion:
+      'Considered cost-effective at current threshold.',
+  }),
   hta_results: DEFAULT_STUB_RESPONSE,
   trial_results: JSON.stringify({
     trialName: 'MOCK-301',

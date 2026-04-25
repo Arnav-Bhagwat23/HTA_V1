@@ -165,6 +165,9 @@ describe('processSearchJob AU fixture path', () => {
 
       const trialResultsSheet = workbook.getWorksheet('Trial Results');
       const nmaResultsSheet = workbook.getWorksheet('NMA Results');
+      const economicEvaluationSheet = workbook.getWorksheet(
+        'Economic Evaluation',
+      );
 
       expect(trialResultsSheet?.getRow(2).getCell(1).value).toBe('MOCK-301');
       expect(trialResultsSheet?.getRow(2).getCell(2).value).toBe('Phase 3');
@@ -173,6 +176,12 @@ describe('processSearchJob AU fixture path', () => {
       );
       expect(nmaResultsSheet?.getRow(2).getCell(3).value).toBe(
         'Hazard ratio',
+      );
+      expect(economicEvaluationSheet?.getRow(2).getCell(1).value).toBe(
+        'Partitioned survival model',
+      );
+      expect(economicEvaluationSheet?.getRow(2).getCell(5).value).toBe(
+        '$45,000/QALY',
       );
     } finally {
       await prisma.user.delete({

@@ -116,6 +116,27 @@ describe('callOpenAIStructured', () => {
     );
   });
 
+  it('stub mode returns deterministic Economic Evaluation JSON', async () => {
+    process.env.LLM_MODE = 'stub';
+    const { callOpenAIStructured } = await import('./openai-client');
+
+    await expect(
+      callOpenAIStructured('test prompt', 'economic_evaluation', {
+        type: 'object',
+      }),
+    ).resolves.toBe(
+      JSON.stringify({
+        modelType: 'Partitioned survival model',
+        perspective: 'Payer',
+        timeHorizon: 'Lifetime',
+        comparator: 'Standard of care',
+        icer: '$45,000/QALY',
+        costEffectivenessConclusion:
+          'Considered cost-effective at current threshold.',
+      }),
+    );
+  });
+
   it('missing API key throws in openai mode', async () => {
     process.env.LLM_MODE = 'openai';
     process.env.OPENAI_EXTRACTION_MODEL = 'gpt-test';

@@ -1,17 +1,20 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import type { EconomicEvaluationRow } from '../schema/economic-evaluation.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
 import type { NmaResultsRow } from '../schema/nma-results.schema';
 import type { TrialResultsRow } from '../schema/trial-results.schema';
 
 export interface StructuredExtractionOutput {
+  economicEvaluation: EconomicEvaluationRow[];
   htaResults: HtaResultsRow[];
   nmaResults: NmaResultsRow[];
   trialResults: TrialResultsRow[];
 }
 
 const EMPTY_STRUCTURED_EXTRACTION_OUTPUT: StructuredExtractionOutput = {
+  economicEvaluation: [],
   htaResults: [],
   nmaResults: [],
   trialResults: [],
@@ -35,6 +38,9 @@ export const loadStructuredExtractionArtifact = async (
     const parsed = JSON.parse(fileContents) as Partial<StructuredExtractionOutput>;
 
     return {
+      economicEvaluation: Array.isArray(parsed.economicEvaluation)
+        ? parsed.economicEvaluation
+        : [],
       htaResults: Array.isArray(parsed.htaResults) ? parsed.htaResults : [],
       nmaResults: Array.isArray(parsed.nmaResults) ? parsed.nmaResults : [],
       trialResults: Array.isArray(parsed.trialResults) ? parsed.trialResults : [],
@@ -61,6 +67,10 @@ export const persistStructuredExtractionArtifact = async (
     (await loadStructuredExtractionArtifact(searchJobId)) ??
     EMPTY_STRUCTURED_EXTRACTION_OUTPUT;
   const mergedOutput: StructuredExtractionOutput = {
+    economicEvaluation: [
+      ...existingOutput.economicEvaluation,
+      ...output.economicEvaluation,
+    ],
     htaResults:
       output.htaResults.length > 0
         ? output.htaResults

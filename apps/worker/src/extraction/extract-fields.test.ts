@@ -48,6 +48,17 @@ describe('extractFieldsFromParsedDocument', () => {
         conclusion: 'Mock drug favored in the NMA.',
       },
     ]);
+    expect(result.structuredOutput.economicEvaluation).toEqual([
+      {
+        modelType: 'Partitioned survival model',
+        perspective: 'Payer',
+        timeHorizon: 'Lifetime',
+        comparator: 'Standard of care',
+        icer: '$45,000/QALY',
+        costEffectivenessConclusion:
+          'Considered cost-effective at current threshold.',
+      },
+    ]);
     expect(result.structuredOutput.trialResults).toEqual([
       {
         trialName: 'MOCK-301',
@@ -86,6 +97,7 @@ describe('extractFieldsFromParsedDocument', () => {
       confidence: null,
     });
     expect(result.fields[0].evidence[0].snippet).toBeNull();
+    expect(result.structuredOutput.economicEvaluation).toHaveLength(1);
     expect(result.structuredOutput.nmaResults).toHaveLength(1);
     expect(result.structuredOutput.trialResults).toHaveLength(1);
   });

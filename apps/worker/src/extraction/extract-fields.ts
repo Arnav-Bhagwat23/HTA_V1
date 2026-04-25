@@ -1,5 +1,6 @@
 import type { ExtractionResult, ParsedDocument } from '@hta/shared';
 
+import { extractEconomicEvaluation } from '../llm/extract-economic-evaluation';
 import { extractHtaResults } from '../llm/extract-hta-results';
 import { extractNmaResults } from '../llm/extract-nma-results';
 import { extractTrialResults } from '../llm/extract-trial-results';
@@ -54,10 +55,20 @@ export const extractFieldsFromParsedDocument = async (
   const { evidence, hasParsedText } = buildEvidence(parsedDocument);
   const fallbackDecisionValue = extractDecisionValue(parsedDocument.rawText);
 
+  let economicEvaluation = [] as StructuredExtractionOutput['economicEvaluation'];
   let llmDecisionValue: string | null = null;
   let htaResults = [] as StructuredExtractionOutput['htaResults'];
   let nmaResults = [] as StructuredExtractionOutput['nmaResults'];
   let trialResults = [] as StructuredExtractionOutput['trialResults'];
+
+  try {
+    const economicEvaluationResult = await extractEconomicEvaluation(
+      parsedDocument,
+    );
+    economicEvaluation = [economicEvaluationResult];
+  } catch {
+    economicEvaluation = [];
+  }
 
   try {
     const llmResult = await extractHtaResults(parsedDocument);
@@ -117,6 +128,7 @@ export const extractFieldsFromParsedDocument = async (
     warnings: [],
     confidence: 1,
     structuredOutput: {
+      economicEvaluation,
       htaResults,
       nmaResults,
       trialResults,
