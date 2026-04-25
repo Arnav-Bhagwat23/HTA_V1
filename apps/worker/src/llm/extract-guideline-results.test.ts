@@ -1,0 +1,112 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { ParsedDocument } from '@hta/shared';
+
+const buildParsedDocument = (
+  overrides: Partial<ParsedDocument> = {},
+): ParsedDocument => ({
+  documentId: 'doc-1',
+  sourceType: 'pdf',
+  title: 'Mock HTA document',
+  publishedAt: '2026-04-25T00:00:00.000Z',
+  rawText: 'Mock parsed document text',
+  metadata: {
+    sourceName: 'Mock Source',
+    sourceUrl: 'https://example.com/mock.pdf',
+    sourceCountry: 'AU',
+    parser: 'mock-pdf-parser',
+  },
+  ...overrides,
+});
+
+afterEach(() => {
+  vi.resetModules();
+});
+
+describe('extractGuidelineResults', () => {
+  it('valid JSON passes', async () => {
+    vi.doMock('./openai-client', () => ({
+      callOpenAIStructured: vi.fn().mockResolvedValue(
+        JSON.stringify({
+          guidelineName: 'Mock Oncology Guideline 2026',
+          issuingBody: 'Mock Society',
+          recommendation: 'Recommended in selected patients',
+          population: 'Adults with mock condition',
+          lineOfTherapy: 'Second line',
+          notes: 'Use after progression on first-line therapy.',
+        }),
+      ),
+    }));
+
+    const { extractGuidelineResults } = await import(
+      './extract-guideline-results'
+    );
+
+    await expect(
+      extractGuidelineResults(buildParsedDocument()),
+    ).resolves.toEqual({
+      guidelineName: 'Mock Oncology Guideline 2026',
+      issuingBody: 'Mock Society',
+      recommendation: 'Recommended in selected patients',
+      population: 'Adults with mock condition',
+      lineOfTherapy: 'Second line',
+      notes: 'Use after progression on first-line therapy.',
+    });
+  });
+
+  it('malformed JSON throws', async () => {
+    vi.doMock('./openai-client', () => ({
+      callOpenAIStructured: vi.fn().mockResolvedValue('{not valid json'),
+    }));
+
+    const { extractGuidelineResults } = await import(
+      './extract-guideline-results'
+    );
+
+    await expect(
+      extractGuidelineResults(buildParsedDocument()),
+    ).rejects.toThrow();
+  });
+
+  it('missing fields throw', async () => {
+    vi.doMock('./openai-client', () => ({
+      callOpenAIStructured: vi.fn().mockResolvedValue(
+        JSON.stringify({
+          guidelineName: 'Mock Oncology Guideline 2026',
+          issuingBody: 'Mock Society',
+        }),
+      ),
+    }));
+
+    const { extractGuidelineResults } = await import(
+      './extract-guideline-results'
+    );
+
+    await expect(
+      extractGuidelineResults(buildParsedDocument()),
+    ).rejects.toThrow();
+  });
+
+  it('invalid field types throw', async () => {
+    vi.doMock('./openai-client', () => ({
+      callOpenAIStructured: vi.fn().mockResolvedValue(
+        JSON.stringify({
+          guidelineName: 'Mock Oncology Guideline 2026',
+          issuingBody: 'Mock Society',
+          recommendation: 'Recommended in selected patients',
+          population: ['Adults with mock condition'],
+          lineOfTherapy: 'Second line',
+          notes: 'Use after progression on first-line therapy.',
+        }),
+      ),
+    }));
+
+    const { extractGuidelineResults } = await import(
+      './extract-guideline-results'
+    );
+
+    await expect(
+      extractGuidelineResults(buildParsedDocument()),
+    ).rejects.toThrow();
+  });
+});

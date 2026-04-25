@@ -8,6 +8,7 @@ describe('buildWorkbookBuffer', () => {
   it('creates all expected sheets and HTA Results headers', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      guidelineResults: [],
       htaResults: [],
       nmaResults: [],
       trialResults: [],
@@ -63,6 +64,15 @@ describe('buildWorkbookBuffer', () => {
       'Cost-Effectiveness Conclusion',
     ]);
     expect(workbook.getWorksheet('Guideline Results')).toBeDefined();
+    expect(workbook.getWorksheet('Guideline Results')?.getRow(1).values).toEqual([
+      ,
+      'Guideline Name',
+      'Issuing Body',
+      'Recommendation',
+      'Population',
+      'Line of Therapy',
+      'Notes',
+    ]);
     expect(workbook.getWorksheet('Field Provenance')).toBeDefined();
     expect(workbook.getWorksheet('Documents Considered')).toBeDefined();
     expect(workbook.getWorksheet('Extraction Audit Log')).toBeDefined();
@@ -74,6 +84,7 @@ describe('buildWorkbookBuffer', () => {
   it('writes one HTA Results row', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      guidelineResults: [],
       htaResults: [
         {
           drugName: 'Mock drug',
@@ -106,6 +117,7 @@ describe('buildWorkbookBuffer', () => {
   it('writes one Trial Results row', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      guidelineResults: [],
       htaResults: [],
       nmaResults: [],
       trialResults: [
@@ -138,6 +150,7 @@ describe('buildWorkbookBuffer', () => {
   it('writes one NMA Results row', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      guidelineResults: [],
       htaResults: [],
       nmaResults: [
         {
@@ -180,6 +193,7 @@ describe('buildWorkbookBuffer', () => {
             'Considered cost-effective at current threshold.',
         },
       ],
+      guidelineResults: [],
       htaResults: [],
       nmaResults: [],
       trialResults: [],
@@ -197,6 +211,39 @@ describe('buildWorkbookBuffer', () => {
       'Standard of care',
       '$45,000/QALY',
       'Considered cost-effective at current threshold.',
+    ]);
+  });
+
+  it('writes one Guideline Results row', async () => {
+    const buffer = await buildWorkbookBuffer({
+      economicEvaluation: [],
+      guidelineResults: [
+        {
+          guidelineName: 'Mock Oncology Guideline 2026',
+          issuingBody: 'Mock Society',
+          recommendation: 'Recommended in selected patients',
+          population: 'Adults with mock condition',
+          lineOfTherapy: 'Second line',
+          notes: 'Use after progression on first-line therapy.',
+        },
+      ],
+      htaResults: [],
+      nmaResults: [],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const guidelineResultsSheet = workbook.getWorksheet('Guideline Results');
+    expect(guidelineResultsSheet?.getRow(2).values).toEqual([
+      ,
+      'Mock Oncology Guideline 2026',
+      'Mock Society',
+      'Recommended in selected patients',
+      'Adults with mock condition',
+      'Second line',
+      'Use after progression on first-line therapy.',
     ]);
   });
 });

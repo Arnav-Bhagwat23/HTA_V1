@@ -77,6 +77,7 @@ export const buildJobWorkbook = async (
   const storagePath = path.join(outputDirectory, 'hta-output.xlsx');
   const workbookBuffer = await buildWorkbookBuffer({
     economicEvaluation: [],
+    guidelineResults: [],
     htaResults: [mapJobToHtaResultsRow(job)],
     nmaResults: [],
     trialResults: [],
