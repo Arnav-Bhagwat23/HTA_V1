@@ -100,6 +100,17 @@ export const WORKBOOK_COLUMNS: Record<WorkbookSheetName, WorkbookColumn[]> = {
     { key: 'warningMessage', header: 'Warning Message' },
     { key: 'source', header: 'Source' },
   ],
-  'Run Metadata': [],
+  'Run Metadata': [
+    { key: 'jobId', header: 'Job ID' },
+    { key: 'mode', header: 'Mode' },
+    { key: 'status', header: 'Status' },
+    { key: 'rawQuery', header: 'Raw Query' },
+    { key: 'canonicalDrug', header: 'Canonical Drug' },
+    { key: 'canonicalIndication', header: 'Canonical Indication' },
+    { key: 'canonicalGeography', header: 'Canonical Geography' },
+    { key: 'requiresManualUpload', header: 'Requires Manual Upload' },
+    { key: 'createdAt', header: 'Created At' },
+    { key: 'completedAt', header: 'Completed At' },
+  ],
   'Source URLs': [],
 };

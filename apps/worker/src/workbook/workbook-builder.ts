@@ -8,6 +8,7 @@ import type { GuidelineResultsRow } from '../schema/guideline-results.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
 import type { MissingFieldsWarningsRow } from '../schema/missing-fields-warnings.schema';
 import type { NmaResultsRow } from '../schema/nma-results.schema';
+import type { RunMetadataRow } from '../schema/run-metadata.schema';
 import type { TrialResultsRow } from '../schema/trial-results.schema';
 import { WORKBOOK_COLUMNS, WORKBOOK_SHEETS } from './workbook-schema';
 
@@ -20,6 +21,7 @@ export interface WorkbookBuildInput {
   htaResults: HtaResultsRow[];
   missingFieldsWarnings: MissingFieldsWarningsRow[];
   nmaResults: NmaResultsRow[];
+  runMetadata: RunMetadataRow[];
   trialResults: TrialResultsRow[];
 }
 
@@ -87,6 +89,12 @@ export const buildWorkbookBuffer = async (
 
     if (sheetName === 'Missing Fields & Warnings') {
       for (const row of input.missingFieldsWarnings) {
+        worksheet.addRow(row);
+      }
+    }
+
+    if (sheetName === 'Run Metadata') {
+      for (const row of input.runMetadata) {
         worksheet.addRow(row);
       }
     }

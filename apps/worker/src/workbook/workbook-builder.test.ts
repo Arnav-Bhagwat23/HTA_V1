@@ -15,6 +15,7 @@ describe('buildWorkbookBuffer', () => {
       htaResults: [],
       missingFieldsWarnings: [],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -121,6 +122,19 @@ describe('buildWorkbookBuffer', () => {
       'Warning Message',
       'Source',
     ]);
+    expect(workbook.getWorksheet('Run Metadata')?.getRow(1).values).toEqual([
+      ,
+      'Job ID',
+      'Mode',
+      'Status',
+      'Raw Query',
+      'Canonical Drug',
+      'Canonical Indication',
+      'Canonical Geography',
+      'Requires Manual Upload',
+      'Created At',
+      'Completed At',
+    ]);
     expect(workbook.getWorksheet('Missing Fields & Warnings')).toBeDefined();
     expect(workbook.getWorksheet('Run Metadata')).toBeDefined();
     expect(workbook.getWorksheet('Source URLs')).toBeDefined();
@@ -145,6 +159,7 @@ describe('buildWorkbookBuffer', () => {
       ],
       missingFieldsWarnings: [],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -173,6 +188,7 @@ describe('buildWorkbookBuffer', () => {
       htaResults: [],
       missingFieldsWarnings: [],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [
         {
           trialName: 'MOCK-301',
@@ -219,6 +235,7 @@ describe('buildWorkbookBuffer', () => {
           conclusion: 'Mock drug favored in the NMA.',
         },
       ],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -257,6 +274,7 @@ describe('buildWorkbookBuffer', () => {
       htaResults: [],
       missingFieldsWarnings: [],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -294,6 +312,7 @@ describe('buildWorkbookBuffer', () => {
       htaResults: [],
       missingFieldsWarnings: [],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -335,6 +354,7 @@ describe('buildWorkbookBuffer', () => {
       htaResults: [],
       missingFieldsWarnings: [],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -382,6 +402,7 @@ describe('buildWorkbookBuffer', () => {
       htaResults: [],
       missingFieldsWarnings: [],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -422,6 +443,7 @@ describe('buildWorkbookBuffer', () => {
       htaResults: [],
       missingFieldsWarnings: [],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -454,6 +476,7 @@ describe('buildWorkbookBuffer', () => {
         },
       ],
       nmaResults: [],
+      runMetadata: [],
       trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
@@ -472,5 +495,50 @@ describe('buildWorkbookBuffer', () => {
       'Decision phrase was not found in the latest document.',
     );
     expect(row?.getCell(5).value).toBe('field_extraction');
+  });
+
+  it('writes Run Metadata rows', async () => {
+    const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
+      economicEvaluation: [],
+      extractionAuditLog: [],
+      fieldProvenance: [],
+      guidelineResults: [],
+      htaResults: [],
+      missingFieldsWarnings: [],
+      nmaResults: [],
+      runMetadata: [
+        {
+          jobId: 'job-123',
+          mode: 'AUTOMATIC',
+          status: 'COMPLETED',
+          rawQuery: 'Mock drug Australia',
+          canonicalDrug: 'Mock drug',
+          canonicalIndication: 'General indication',
+          canonicalGeography: 'AU',
+          requiresManualUpload: false,
+          createdAt: '2026-04-25T12:00:00.000Z',
+          completedAt: '2026-04-25T12:05:00.000Z',
+        },
+      ],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const runMetadataSheet = workbook.getWorksheet('Run Metadata');
+    const row = runMetadataSheet?.getRow(2);
+
+    expect(row?.getCell(1).value).toBe('job-123');
+    expect(row?.getCell(2).value).toBe('AUTOMATIC');
+    expect(row?.getCell(3).value).toBe('COMPLETED');
+    expect(row?.getCell(4).value).toBe('Mock drug Australia');
+    expect(row?.getCell(5).value).toBe('Mock drug');
+    expect(row?.getCell(6).value).toBe('General indication');
+    expect(row?.getCell(7).value).toBe('AU');
+    expect(row?.getCell(8).value).toBe(false);
+    expect(row?.getCell(9).value).toBe('2026-04-25T12:00:00.000Z');
+    expect(row?.getCell(10).value).toBe('2026-04-25T12:05:00.000Z');
   });
 });

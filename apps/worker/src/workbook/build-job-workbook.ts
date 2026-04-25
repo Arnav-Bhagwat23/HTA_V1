@@ -7,6 +7,7 @@ import type { ExtractionAuditLogRow } from '../schema/extraction-audit-log.schem
 import type { FieldProvenanceRow } from '../schema/field-provenance.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
 import type { MissingFieldsWarningsRow } from '../schema/missing-fields-warnings.schema';
+import type { RunMetadataRow } from '../schema/run-metadata.schema';
 import { buildWorkbookBuffer } from './workbook-builder';
 
 export interface JobWorkbookResult {
@@ -218,6 +219,32 @@ const mapJobToMissingFieldsWarningsRows = (job: {
     })),
 ];
 
+const mapJobToRunMetadataRows = (job: {
+  id: string;
+  mode: string;
+  status: string;
+  rawQuery: string | null;
+  canonicalDrug: string | null;
+  canonicalIndication: string | null;
+  canonicalGeography: string | null;
+  requiresManualUpload: boolean;
+  createdAt: Date;
+  completedAt: Date | null;
+}): RunMetadataRow[] => [
+  {
+    jobId: job.id,
+    mode: job.mode,
+    status: job.status,
+    rawQuery: job.rawQuery,
+    canonicalDrug: job.canonicalDrug,
+    canonicalIndication: job.canonicalIndication,
+    canonicalGeography: job.canonicalGeography,
+    requiresManualUpload: job.requiresManualUpload,
+    createdAt: job.createdAt.toISOString(),
+    completedAt: job.completedAt?.toISOString() ?? null,
+  },
+];
+
 export const buildJobWorkbook = async (
   searchJobId: string,
 ): Promise<JobWorkbookResult> => {
@@ -225,11 +252,17 @@ export const buildJobWorkbook = async (
     where: { id: searchJobId },
     select: {
       id: true,
+      rawQuery: true,
+      mode: true,
+      status: true,
       canonicalDrug: true,
       canonicalIndication: true,
       canonicalGeography: true,
+      requiresManualUpload: true,
       failureCode: true,
       failureMessage: true,
+      createdAt: true,
+      completedAt: true,
       fieldExtractions: {
         orderBy: [
           { fieldName: 'asc' },
@@ -339,6 +372,7 @@ export const buildJobWorkbook = async (
     htaResults: [mapJobToHtaResultsRow(job)],
     missingFieldsWarnings: mapJobToMissingFieldsWarningsRows(job),
     nmaResults: [],
+    runMetadata: mapJobToRunMetadataRows(job),
     trialResults: [],
   });
 

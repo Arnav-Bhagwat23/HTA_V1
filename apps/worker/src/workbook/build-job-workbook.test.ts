@@ -38,9 +38,11 @@ describe('buildJobWorkbook', () => {
           rawQuery: 'Mock drug general indication Australia',
           mode: JobMode.AUTOMATIC,
           status: JobStatus.COMPLETED,
+          completedAt: new Date('2026-04-25T00:05:00.000Z'),
           canonicalDrug: 'Mock drug',
           canonicalIndication: 'General indication',
           canonicalGeography: 'AU',
+          requiresManualUpload: false,
           failureCode: WarningCode.UNKNOWN_ERROR,
           failureMessage: 'Mock job-level failure for workbook coverage.',
           auditEvents: {
@@ -231,6 +233,24 @@ describe('buildJobWorkbook', () => {
       expect(missingFieldsWarningsSheet?.getRow(6).getCell(5).value).toBe(
         'job_source',
       );
+
+      const runMetadataSheet = workbook.getWorksheet('Run Metadata');
+      expect(runMetadataSheet?.getRow(2).getCell(1).value).toBe(job.id);
+      expect(runMetadataSheet?.getRow(2).getCell(2).value).toBe('AUTOMATIC');
+      expect(runMetadataSheet?.getRow(2).getCell(3).value).toBe('COMPLETED');
+      expect(runMetadataSheet?.getRow(2).getCell(4).value).toBe(
+        'Mock drug general indication Australia',
+      );
+      expect(runMetadataSheet?.getRow(2).getCell(5).value).toBe('Mock drug');
+      expect(runMetadataSheet?.getRow(2).getCell(6).value).toBe(
+        'General indication',
+      );
+      expect(runMetadataSheet?.getRow(2).getCell(7).value).toBe('AU');
+      expect(runMetadataSheet?.getRow(2).getCell(8).value).toBe(false);
+      expect(typeof runMetadataSheet?.getRow(2).getCell(9).value).toBe(
+        'string',
+      );
+      expect(runMetadataSheet?.getRow(2).getCell(10).value).not.toBeNull();
     } finally {
       await prisma.user.delete({
         where: { id: user.id },
