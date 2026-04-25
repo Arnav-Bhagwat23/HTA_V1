@@ -9,6 +9,7 @@ describe('buildWorkbookBuffer', () => {
     const buffer = await buildWorkbookBuffer({
       documentsConsidered: [],
       economicEvaluation: [],
+      extractionAuditLog: [],
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
@@ -105,6 +106,12 @@ describe('buildWorkbookBuffer', () => {
       'Warning Message',
     ]);
     expect(workbook.getWorksheet('Extraction Audit Log')).toBeDefined();
+    expect(workbook.getWorksheet('Extraction Audit Log')?.getRow(1).values).toEqual([
+      ,
+      'Event Type',
+      'Event Payload',
+      'Created At',
+    ]);
     expect(workbook.getWorksheet('Missing Fields & Warnings')).toBeDefined();
     expect(workbook.getWorksheet('Run Metadata')).toBeDefined();
     expect(workbook.getWorksheet('Source URLs')).toBeDefined();
@@ -114,6 +121,7 @@ describe('buildWorkbookBuffer', () => {
     const buffer = await buildWorkbookBuffer({
       documentsConsidered: [],
       economicEvaluation: [],
+      extractionAuditLog: [],
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [
@@ -149,6 +157,7 @@ describe('buildWorkbookBuffer', () => {
     const buffer = await buildWorkbookBuffer({
       documentsConsidered: [],
       economicEvaluation: [],
+      extractionAuditLog: [],
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
@@ -184,6 +193,7 @@ describe('buildWorkbookBuffer', () => {
     const buffer = await buildWorkbookBuffer({
       documentsConsidered: [],
       economicEvaluation: [],
+      extractionAuditLog: [],
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
@@ -229,6 +239,7 @@ describe('buildWorkbookBuffer', () => {
             'Considered cost-effective at current threshold.',
         },
       ],
+      extractionAuditLog: [],
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
@@ -255,6 +266,7 @@ describe('buildWorkbookBuffer', () => {
     const buffer = await buildWorkbookBuffer({
       documentsConsidered: [],
       economicEvaluation: [],
+      extractionAuditLog: [],
       fieldProvenance: [],
       guidelineResults: [
         {
@@ -290,6 +302,7 @@ describe('buildWorkbookBuffer', () => {
     const buffer = await buildWorkbookBuffer({
       documentsConsidered: [],
       economicEvaluation: [],
+      extractionAuditLog: [],
       fieldProvenance: [
         {
           fieldName: 'hta_decision',
@@ -348,6 +361,7 @@ describe('buildWorkbookBuffer', () => {
         },
       ],
       economicEvaluation: [],
+      extractionAuditLog: [],
       fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
@@ -374,5 +388,34 @@ describe('buildWorkbookBuffer', () => {
     expect(row?.getCell(9).value).toBe('PARSED');
     expect(row?.getCell(10).value).toBeNull();
     expect(row?.getCell(11).value).toBeNull();
+  });
+
+  it('writes Extraction Audit Log rows', async () => {
+    const buffer = await buildWorkbookBuffer({
+      documentsConsidered: [],
+      economicEvaluation: [],
+      extractionAuditLog: [
+        {
+          eventType: 'job_completed',
+          eventPayload: '{"status":"COMPLETED"}',
+          createdAt: '2026-04-25T12:00:00.000Z',
+        },
+      ],
+      fieldProvenance: [],
+      guidelineResults: [],
+      htaResults: [],
+      nmaResults: [],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const extractionAuditLogSheet = workbook.getWorksheet('Extraction Audit Log');
+    const row = extractionAuditLogSheet?.getRow(2);
+
+    expect(row?.getCell(1).value).toBe('job_completed');
+    expect(row?.getCell(2).value).toBe('{"status":"COMPLETED"}');
+    expect(row?.getCell(3).value).toBe('2026-04-25T12:00:00.000Z');
   });
 });

@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { prisma } from '../lib/prisma';
 import type { DocumentsConsideredRow } from '../schema/documents-considered.schema';
+import type { ExtractionAuditLogRow } from '../schema/extraction-audit-log.schema';
 import type { FieldProvenanceRow } from '../schema/field-provenance.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
 import { buildWorkbookBuffer } from './workbook-builder';
@@ -130,6 +131,22 @@ const mapJobToDocumentsConsideredRows = (job: {
   })),
 ];
 
+const mapJobToExtractionAuditLogRows = (job: {
+  auditEvents: Array<{
+    eventType: string;
+    eventPayload: unknown;
+    createdAt: Date;
+  }>;
+}): ExtractionAuditLogRow[] =>
+  job.auditEvents.map((event) => ({
+    eventType: event.eventType,
+    eventPayload:
+      event.eventPayload === null || event.eventPayload === undefined
+        ? null
+        : JSON.stringify(event.eventPayload),
+    createdAt: event.createdAt.toISOString(),
+  }));
+
 export const buildJobWorkbook = async (
   searchJobId: string,
 ): Promise<JobWorkbookResult> => {
@@ -205,6 +222,17 @@ export const buildJobWorkbook = async (
           createdAt: true,
         },
       },
+      auditEvents: {
+        orderBy: [
+          { createdAt: 'asc' },
+          { id: 'asc' },
+        ],
+        select: {
+          eventType: true,
+          eventPayload: true,
+          createdAt: true,
+        },
+      },
     },
   });
 
@@ -222,6 +250,7 @@ export const buildJobWorkbook = async (
   const workbookBuffer = await buildWorkbookBuffer({
     documentsConsidered: mapJobToDocumentsConsideredRows(job),
     economicEvaluation: [],
+    extractionAuditLog: mapJobToExtractionAuditLogRows(job),
     fieldProvenance: mapJobToFieldProvenanceRows(job),
     guidelineResults: [],
     htaResults: [mapJobToHtaResultsRow(job)],

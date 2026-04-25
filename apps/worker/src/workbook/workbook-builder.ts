@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 
 import type { DocumentsConsideredRow } from '../schema/documents-considered.schema';
 import type { EconomicEvaluationRow } from '../schema/economic-evaluation.schema';
+import type { ExtractionAuditLogRow } from '../schema/extraction-audit-log.schema';
 import type { FieldProvenanceRow } from '../schema/field-provenance.schema';
 import type { GuidelineResultsRow } from '../schema/guideline-results.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
@@ -12,6 +13,7 @@ import { WORKBOOK_COLUMNS, WORKBOOK_SHEETS } from './workbook-schema';
 export interface WorkbookBuildInput {
   documentsConsidered: DocumentsConsideredRow[];
   economicEvaluation: EconomicEvaluationRow[];
+  extractionAuditLog: ExtractionAuditLogRow[];
   fieldProvenance: FieldProvenanceRow[];
   guidelineResults: GuidelineResultsRow[];
   htaResults: HtaResultsRow[];
@@ -71,6 +73,12 @@ export const buildWorkbookBuffer = async (
 
     if (sheetName === 'Documents Considered') {
       for (const row of input.documentsConsidered) {
+        worksheet.addRow(row);
+      }
+    }
+
+    if (sheetName === 'Extraction Audit Log') {
+      for (const row of input.extractionAuditLog) {
         worksheet.addRow(row);
       }
     }

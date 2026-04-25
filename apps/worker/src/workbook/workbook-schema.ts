@@ -88,7 +88,11 @@ export const WORKBOOK_COLUMNS: Record<WorkbookSheetName, WorkbookColumn[]> = {
     { key: 'warningCode', header: 'Warning Code' },
     { key: 'warningMessage', header: 'Warning Message' },
   ],
-  'Extraction Audit Log': [],
+  'Extraction Audit Log': [
+    { key: 'eventType', header: 'Event Type' },
+    { key: 'eventPayload', header: 'Event Payload' },
+    { key: 'createdAt', header: 'Created At' },
+  ],
   'Missing Fields & Warnings': [],
   'Run Metadata': [],
   'Source URLs': [],

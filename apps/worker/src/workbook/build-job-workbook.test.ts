@@ -33,6 +33,16 @@ describe('buildJobWorkbook', () => {
           canonicalDrug: 'Mock drug',
           canonicalIndication: 'General indication',
           canonicalGeography: 'AU',
+          auditEvents: {
+            create: [
+              {
+                eventType: 'job_created',
+                eventPayload: {
+                  mode: 'AUTOMATIC',
+                },
+              },
+            ],
+          },
           documentsConsidered: {
             create: [
               {
@@ -142,6 +152,19 @@ describe('buildJobWorkbook', () => {
       );
       expect(documentsConsideredSheet?.getRow(3).getCell(4).value).toBe(
         'upload',
+      );
+
+      const extractionAuditLogSheet = workbook.getWorksheet(
+        'Extraction Audit Log',
+      );
+      expect(extractionAuditLogSheet?.getRow(2).getCell(1).value).toBe(
+        'job_created',
+      );
+      expect(extractionAuditLogSheet?.getRow(2).getCell(2).value).toBe(
+        '{"mode":"AUTOMATIC"}',
+      );
+      expect(typeof extractionAuditLogSheet?.getRow(2).getCell(3).value).toBe(
+        'string',
       );
     } finally {
       await prisma.user.delete({
