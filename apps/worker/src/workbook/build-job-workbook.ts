@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { prisma } from '../lib/prisma';
+import type { FieldProvenanceRow } from '../schema/field-provenance.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
 import { buildWorkbookBuffer } from './workbook-builder';
 
@@ -36,6 +37,45 @@ const mapJobToHtaResultsRow = (job: {
   };
 };
 
+const mapJobToFieldProvenanceRows = (job: {
+  fieldExtractions: Array<{
+    fieldName: string;
+    fieldLabel: string;
+    value: string | null;
+    confidence: number | null;
+    warningCode: string | null;
+    sourcePage: string | null;
+    evidenceSnippet: string | null;
+    documentConsidered: {
+      documentTitle: string;
+      documentUrl: string | null;
+      publishedAt: Date | null;
+    } | null;
+    uploadedDocument: {
+      originalFilename: string;
+      createdAt: Date;
+    } | null;
+  }>;
+}): FieldProvenanceRow[] =>
+  job.fieldExtractions.map((field) => ({
+    fieldName: field.fieldName,
+    fieldLabel: field.fieldLabel,
+    value: field.value,
+    confidence: field.confidence,
+    warningCode: field.warningCode,
+    documentTitle:
+      field.documentConsidered?.documentTitle ??
+      field.uploadedDocument?.originalFilename ??
+      null,
+    documentUrl: field.documentConsidered?.documentUrl ?? null,
+    sourcePage: field.sourcePage,
+    evidenceSnippet: field.evidenceSnippet,
+    publishedAt:
+      field.documentConsidered?.publishedAt?.toISOString() ??
+      field.uploadedDocument?.createdAt.toISOString() ??
+      null,
+  }));
+
 export const buildJobWorkbook = async (
   searchJobId: string,
 ): Promise<JobWorkbookResult> => {
@@ -47,18 +87,31 @@ export const buildJobWorkbook = async (
       canonicalIndication: true,
       canonicalGeography: true,
       fieldExtractions: {
-        where: {
-          fieldName: {
-            in: ['hta_decision'],
-          },
-        },
         orderBy: [
           { fieldName: 'asc' },
           { createdAt: 'asc' },
         ],
         select: {
           fieldName: true,
+          fieldLabel: true,
           value: true,
+          confidence: true,
+          warningCode: true,
+          sourcePage: true,
+          evidenceSnippet: true,
+          documentConsidered: {
+            select: {
+              documentTitle: true,
+              documentUrl: true,
+              publishedAt: true,
+            },
+          },
+          uploadedDocument: {
+            select: {
+              originalFilename: true,
+              createdAt: true,
+            },
+          },
         },
       },
     },
@@ -77,6 +130,7 @@ export const buildJobWorkbook = async (
   const storagePath = path.join(outputDirectory, 'hta-output.xlsx');
   const workbookBuffer = await buildWorkbookBuffer({
     economicEvaluation: [],
+    fieldProvenance: mapJobToFieldProvenanceRows(job),
     guidelineResults: [],
     htaResults: [mapJobToHtaResultsRow(job)],
     nmaResults: [],

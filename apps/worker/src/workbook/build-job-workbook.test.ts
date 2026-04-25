@@ -36,10 +36,20 @@ describe('buildJobWorkbook', () => {
           fieldExtractions: {
             create: [
               {
+                fieldName: 'document_text_available',
+                fieldLabel: 'Document Text Available',
+                value: 'Yes',
+                confidence: 1,
+                sourcePage: '1',
+                evidenceSnippet: 'Mock parsed PDF text for the selected document.',
+              },
+              {
                 fieldName: 'hta_decision',
                 fieldLabel: 'HTA Decision',
                 value: 'Recommended',
+                confidence: 0.7,
                 sourcePage: '1',
+                evidenceSnippet: 'The medicine is recommended for listing.',
               },
             ],
           },
@@ -71,6 +81,23 @@ describe('buildJobWorkbook', () => {
       expect(row?.getCell(4).value).toBe('Recommended');
       expect(row?.getCell(5).value).toBeNull();
       expect(row?.getCell(6).value).toBeNull();
+
+      const fieldProvenanceSheet = workbook.getWorksheet('Field Provenance');
+      expect(fieldProvenanceSheet?.getRow(2).getCell(1).value).toBe(
+        'document_text_available',
+      );
+      expect(fieldProvenanceSheet?.getRow(2).getCell(2).value).toBe(
+        'Document Text Available',
+      );
+      expect(fieldProvenanceSheet?.getRow(2).getCell(3).value).toBe('Yes');
+      expect(fieldProvenanceSheet?.getRow(2).getCell(4).value).toBe(1);
+      expect(fieldProvenanceSheet?.getRow(2).getCell(8).value).toBe('1');
+      expect(fieldProvenanceSheet?.getRow(3).getCell(1).value).toBe(
+        'hta_decision',
+      );
+      expect(fieldProvenanceSheet?.getRow(3).getCell(3).value).toBe(
+        'Recommended',
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },

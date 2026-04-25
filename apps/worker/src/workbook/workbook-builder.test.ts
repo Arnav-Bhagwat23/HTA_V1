@@ -8,6 +8,7 @@ describe('buildWorkbookBuffer', () => {
   it('creates all expected sheets and HTA Results headers', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
       nmaResults: [],
@@ -74,6 +75,19 @@ describe('buildWorkbookBuffer', () => {
       'Notes',
     ]);
     expect(workbook.getWorksheet('Field Provenance')).toBeDefined();
+    expect(workbook.getWorksheet('Field Provenance')?.getRow(1).values).toEqual([
+      ,
+      'Field Name',
+      'Field Label',
+      'Value',
+      'Confidence',
+      'Warning Code',
+      'Document Title',
+      'Document URL',
+      'Source Page',
+      'Evidence Snippet',
+      'Published At',
+    ]);
     expect(workbook.getWorksheet('Documents Considered')).toBeDefined();
     expect(workbook.getWorksheet('Extraction Audit Log')).toBeDefined();
     expect(workbook.getWorksheet('Missing Fields & Warnings')).toBeDefined();
@@ -84,6 +98,7 @@ describe('buildWorkbookBuffer', () => {
   it('writes one HTA Results row', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      fieldProvenance: [],
       guidelineResults: [],
       htaResults: [
         {
@@ -117,6 +132,7 @@ describe('buildWorkbookBuffer', () => {
   it('writes one Trial Results row', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
       nmaResults: [],
@@ -150,6 +166,7 @@ describe('buildWorkbookBuffer', () => {
   it('writes one NMA Results row', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
       nmaResults: [
@@ -193,6 +210,7 @@ describe('buildWorkbookBuffer', () => {
             'Considered cost-effective at current threshold.',
         },
       ],
+      fieldProvenance: [],
       guidelineResults: [],
       htaResults: [],
       nmaResults: [],
@@ -217,6 +235,7 @@ describe('buildWorkbookBuffer', () => {
   it('writes one Guideline Results row', async () => {
     const buffer = await buildWorkbookBuffer({
       economicEvaluation: [],
+      fieldProvenance: [],
       guidelineResults: [
         {
           guidelineName: 'Mock Oncology Guideline 2026',
@@ -245,5 +264,48 @@ describe('buildWorkbookBuffer', () => {
       'Second line',
       'Use after progression on first-line therapy.',
     ]);
+  });
+
+  it('writes Field Provenance rows', async () => {
+    const buffer = await buildWorkbookBuffer({
+      economicEvaluation: [],
+      fieldProvenance: [
+        {
+          fieldName: 'hta_decision',
+          fieldLabel: 'HTA Decision',
+          value: 'Recommended',
+          confidence: 0.7,
+          warningCode: null,
+          documentTitle: 'Mock HTA Document',
+          documentUrl: 'https://example.com/mock.pdf',
+          sourcePage: '1',
+          evidenceSnippet: 'The medicine is recommended for listing.',
+          publishedAt: '2026-04-25T00:00:00.000Z',
+        },
+      ],
+      guidelineResults: [],
+      htaResults: [],
+      nmaResults: [],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const fieldProvenanceSheet = workbook.getWorksheet('Field Provenance');
+    const row = fieldProvenanceSheet?.getRow(2);
+
+    expect(row?.getCell(1).value).toBe('hta_decision');
+    expect(row?.getCell(2).value).toBe('HTA Decision');
+    expect(row?.getCell(3).value).toBe('Recommended');
+    expect(row?.getCell(4).value).toBe(0.7);
+    expect(row?.getCell(5).value).toBeNull();
+    expect(row?.getCell(6).value).toBe('Mock HTA Document');
+    expect(row?.getCell(7).value).toBe('https://example.com/mock.pdf');
+    expect(row?.getCell(8).value).toBe('1');
+    expect(row?.getCell(9).value).toBe(
+      'The medicine is recommended for listing.',
+    );
+    expect(row?.getCell(10).value).toBe('2026-04-25T00:00:00.000Z');
   });
 });
