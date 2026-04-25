@@ -17,6 +17,14 @@ const STRUCTURED_STUB_RESPONSES: Record<string, string> = {
     primaryEndpoint: 'Progression-free survival',
     resultSummary: 'Mock trial showed benefit in the primary endpoint.',
   }),
+  nma_results: JSON.stringify({
+    comparison: 'Mock drug vs standard of care',
+    outcome: 'Overall survival',
+    effectMeasure: 'Hazard ratio',
+    estimate: '0.78',
+    credibleInterval: '0.65 to 0.94',
+    conclusion: 'Mock drug favored in the NMA.',
+  }),
 };
 
 const getLlmMode = (): string =>

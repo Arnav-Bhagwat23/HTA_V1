@@ -399,7 +399,7 @@ export const buildJobWorkbook = async (
         ? structuredExtractionArtifact.htaResults
         : [mapJobToHtaResultsRow(job)],
     missingFieldsWarnings: mapJobToMissingFieldsWarningsRows(job),
-    nmaResults: [],
+    nmaResults: structuredExtractionArtifact?.nmaResults ?? [],
     runMetadata: mapJobToRunMetadataRows(job),
     sourceUrls: mapJobToSourceUrlsRows(job),
     trialResults: structuredExtractionArtifact?.trialResults ?? [],

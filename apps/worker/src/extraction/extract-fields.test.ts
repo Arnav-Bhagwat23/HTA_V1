@@ -38,6 +38,16 @@ describe('extractFieldsFromParsedDocument', () => {
       publishedAt: '2026-04-24T00:00:00.000Z',
     });
     expect(result.structuredOutput.htaResults).toHaveLength(1);
+    expect(result.structuredOutput.nmaResults).toEqual([
+      {
+        comparison: 'Mock drug vs standard of care',
+        outcome: 'Overall survival',
+        effectMeasure: 'Hazard ratio',
+        estimate: '0.78',
+        credibleInterval: '0.65 to 0.94',
+        conclusion: 'Mock drug favored in the NMA.',
+      },
+    ]);
     expect(result.structuredOutput.trialResults).toEqual([
       {
         trialName: 'MOCK-301',
@@ -76,6 +86,7 @@ describe('extractFieldsFromParsedDocument', () => {
       confidence: null,
     });
     expect(result.fields[0].evidence[0].snippet).toBeNull();
+    expect(result.structuredOutput.nmaResults).toHaveLength(1);
     expect(result.structuredOutput.trialResults).toHaveLength(1);
   });
 

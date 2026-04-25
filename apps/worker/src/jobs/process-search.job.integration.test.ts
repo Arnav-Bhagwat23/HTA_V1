@@ -164,9 +164,16 @@ describe('processSearchJob AU fixture path', () => {
       await workbook.xlsx.load(workbookBuffer);
 
       const trialResultsSheet = workbook.getWorksheet('Trial Results');
+      const nmaResultsSheet = workbook.getWorksheet('NMA Results');
 
       expect(trialResultsSheet?.getRow(2).getCell(1).value).toBe('MOCK-301');
       expect(trialResultsSheet?.getRow(2).getCell(2).value).toBe('Phase 3');
+      expect(nmaResultsSheet?.getRow(2).getCell(1).value).toBe(
+        'Mock drug vs standard of care',
+      );
+      expect(nmaResultsSheet?.getRow(2).getCell(3).value).toBe(
+        'Hazard ratio',
+      );
     } finally {
       await prisma.user.delete({
         where: { id: user.id },

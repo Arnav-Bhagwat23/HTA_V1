@@ -2,15 +2,18 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { HtaResultsRow } from '../schema/hta-results.schema';
+import type { NmaResultsRow } from '../schema/nma-results.schema';
 import type { TrialResultsRow } from '../schema/trial-results.schema';
 
 export interface StructuredExtractionOutput {
   htaResults: HtaResultsRow[];
+  nmaResults: NmaResultsRow[];
   trialResults: TrialResultsRow[];
 }
 
 const EMPTY_STRUCTURED_EXTRACTION_OUTPUT: StructuredExtractionOutput = {
   htaResults: [],
+  nmaResults: [],
   trialResults: [],
 };
 
@@ -33,6 +36,7 @@ export const loadStructuredExtractionArtifact = async (
 
     return {
       htaResults: Array.isArray(parsed.htaResults) ? parsed.htaResults : [],
+      nmaResults: Array.isArray(parsed.nmaResults) ? parsed.nmaResults : [],
       trialResults: Array.isArray(parsed.trialResults) ? parsed.trialResults : [],
     };
   } catch (error) {
@@ -61,6 +65,7 @@ export const persistStructuredExtractionArtifact = async (
       output.htaResults.length > 0
         ? output.htaResults
         : existingOutput.htaResults,
+    nmaResults: [...existingOutput.nmaResults, ...output.nmaResults],
     trialResults: [...existingOutput.trialResults, ...output.trialResults],
   };
   const outputDirectory = getOutputDirectory(searchJobId);

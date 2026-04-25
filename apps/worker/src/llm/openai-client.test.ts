@@ -96,6 +96,26 @@ describe('callOpenAIStructured', () => {
     );
   });
 
+  it('stub mode returns deterministic NMA Results JSON', async () => {
+    process.env.LLM_MODE = 'stub';
+    const { callOpenAIStructured } = await import('./openai-client');
+
+    await expect(
+      callOpenAIStructured('test prompt', 'nma_results', {
+        type: 'object',
+      }),
+    ).resolves.toBe(
+      JSON.stringify({
+        comparison: 'Mock drug vs standard of care',
+        outcome: 'Overall survival',
+        effectMeasure: 'Hazard ratio',
+        estimate: '0.78',
+        credibleInterval: '0.65 to 0.94',
+        conclusion: 'Mock drug favored in the NMA.',
+      }),
+    );
+  });
+
   it('missing API key throws in openai mode', async () => {
     process.env.LLM_MODE = 'openai';
     process.env.OPENAI_EXTRACTION_MODEL = 'gpt-test';

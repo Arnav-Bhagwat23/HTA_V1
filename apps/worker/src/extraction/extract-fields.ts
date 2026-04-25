@@ -1,6 +1,7 @@
 import type { ExtractionResult, ParsedDocument } from '@hta/shared';
 
 import { extractHtaResults } from '../llm/extract-hta-results';
+import { extractNmaResults } from '../llm/extract-nma-results';
 import { extractTrialResults } from '../llm/extract-trial-results';
 import type { StructuredExtractionOutput } from './structured-extraction-artifact';
 
@@ -55,6 +56,7 @@ export const extractFieldsFromParsedDocument = async (
 
   let llmDecisionValue: string | null = null;
   let htaResults = [] as StructuredExtractionOutput['htaResults'];
+  let nmaResults = [] as StructuredExtractionOutput['nmaResults'];
   let trialResults = [] as StructuredExtractionOutput['trialResults'];
 
   try {
@@ -63,6 +65,13 @@ export const extractFieldsFromParsedDocument = async (
     htaResults = [llmResult];
   } catch {
     llmDecisionValue = null;
+  }
+
+  try {
+    const nmaResult = await extractNmaResults(parsedDocument);
+    nmaResults = [nmaResult];
+  } catch {
+    nmaResults = [];
   }
 
   try {
@@ -109,6 +118,7 @@ export const extractFieldsFromParsedDocument = async (
     confidence: 1,
     structuredOutput: {
       htaResults,
+      nmaResults,
       trialResults,
     },
   };
