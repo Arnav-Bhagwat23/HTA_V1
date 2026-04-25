@@ -5,6 +5,7 @@ HTA_V1 is a monorepo for a Health Technology Assessment landscaping application.
 `v0.2.0` is the current handoff release. It proves both required product branches:
 - automatic retrieval/extraction for every supported automatic country
 - manual upload/extraction for unsupported geographies
+- workbook download is now the default output path, with CSV preserved as an optional secondary export
 
 The repo is structured as a monolith-plus-worker system:
 - `apps/web` owns API routes, auth, and user-facing job access
@@ -25,7 +26,7 @@ What is proven in this release:
   - `JP` / `Japan HTA`
 - manual upload path works end to end
 - async queue + worker flow works
-- preview and CSV output are driven from persisted state
+- preview, workbook download, and CSV output are driven from persisted state
 - worker integration tests cover every supported automatic geography
 - test suite currently passes with `115` tests
 
@@ -81,7 +82,7 @@ The automatic path works end to end for all supported automatic countries:
    - `DocumentConsidered`
    - `FieldExtraction`
    - `JobOutput`
-11. status, preview, and CSV download APIs read from persisted state
+11. status, preview, workbook download, and CSV download APIs read from persisted state
 
 ### 2. Manual upload path
 
@@ -98,6 +99,26 @@ The manual-upload branch is also wired end to end:
    - `JobOutput`
 7. upload-processing audit events are written
 
+## Output Behavior
+
+### Default output
+
+- `GET /api/jobs/:jobId/download` returns `.xlsx` by default
+
+### Optional CSV
+
+- `GET /api/jobs/:jobId/download?format=csv` returns CSV as a secondary export
+
+### Preview
+
+- preview remains a simplified extracted-field view
+- preview is not a workbook-style UI
+
+### Workbook status
+
+- `HTA Results` is currently the first populated workbook sheet
+- remaining workbook sheets are scaffolded and ready for expansion
+
 ## Proven Example Queries
 
 These are concise example queries that currently flow through the automatic worker path:
@@ -113,7 +134,8 @@ Expected outcome:
 - routing selects `pbac`
 - selected document comes from PBAC
 - persisted fields include `hta_decision`
-- CSV becomes downloadable
+- workbook becomes downloadable by default
+- CSV remains downloadable as an optional format
 
 ### UK / NICE
 
@@ -126,7 +148,8 @@ Expected outcome:
 - routing selects `nice`
 - selected document comes from NICE
 - persisted fields include `hta_decision`
-- CSV becomes downloadable
+- workbook becomes downloadable by default
+- CSV remains downloadable as an optional format
 
 ### DE / G-BA
 
@@ -139,7 +162,8 @@ Expected outcome:
 - routing selects `gba`
 - selected document comes from G-BA
 - persisted fields include `hta_decision`
-- CSV becomes downloadable
+- workbook becomes downloadable by default
+- CSV remains downloadable as an optional format
 
 ### FR / HAS
 
@@ -152,7 +176,8 @@ Expected outcome:
 - routing selects `has`
 - selected document comes from HAS
 - persisted fields include `hta_decision`
-- CSV becomes downloadable
+- workbook becomes downloadable by default
+- CSV remains downloadable as an optional format
 
 ### IT / AIFA
 
@@ -165,7 +190,8 @@ Expected outcome:
 - routing selects `aifa`
 - selected document comes from AIFA
 - persisted fields include `hta_decision`
-- CSV becomes downloadable
+- workbook becomes downloadable by default
+- CSV remains downloadable as an optional format
 
 ### ES / AEMPS
 
@@ -178,7 +204,8 @@ Expected outcome:
 - routing selects `aemps`
 - selected document comes from AEMPS
 - persisted fields include `hta_decision`
-- CSV becomes downloadable
+- workbook becomes downloadable by default
+- CSV remains downloadable as an optional format
 
 ### JP / Japan HTA
 
@@ -191,7 +218,8 @@ Expected outcome:
 - routing selects `japan`
 - selected document comes from Japan HTA
 - persisted fields include `hta_decision`
-- CSV becomes downloadable
+- workbook becomes downloadable by default
+- CSV remains downloadable as an optional format
 
 ## Current Boundaries
 
@@ -208,7 +236,7 @@ POST /api/search
   -> source adapter returns SelectedDocument
   -> parsePdfDocument(...)
   -> extractFieldsFromParsedDocument(...)
-  -> worker persists document, fields, and downloadable output
+  -> worker persists document, fields, and downloadable outputs
   -> status / preview / download routes read persisted state
 ```
 
@@ -221,7 +249,7 @@ POST /api/uploads
   -> worker starts upload processing
   -> parse uploaded PDF
   -> extractFieldsFromParsedDocument(...)
-  -> worker persists upload-linked fields and downloadable output
+  -> worker persists upload-linked fields and downloadable outputs
 ```
 
 ## Repo Structure
@@ -387,8 +415,8 @@ npm test
 ```
 
 Current status:
-- `21` test files
-- `115` passing tests
+- `27` test files
+- `135` passing tests
 
 ## Known Limitations
 
@@ -424,4 +452,5 @@ At `v0.2.0`, it demonstrates a real persisted async job flow with:
 - parsed-text boundary
 - text-driven extraction boundary
 - preview output
-- CSV output
+- workbook output by default
+- CSV output as a secondary format
