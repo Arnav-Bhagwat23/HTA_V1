@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthenticatedUser } from '../../../../../lib/auth';
@@ -102,6 +104,9 @@ interface RouteContext {
   }>;
 }
 
+const WORKBOOK_MIME_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
 export async function GET(request: NextRequest, context: RouteContext) {
   const auth = await getAuthenticatedUser(request);
 
@@ -113,6 +118,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   const { jobId } = await context.params;
+  const requestedFormat = request.nextUrl.searchParams.get('format');
+  const format = requestedFormat === 'csv' ? 'csv' : requestedFormat === 'xlsx' || requestedFormat === null
+    ? 'xlsx'
+    : null;
+
+  if (!format) {
+    return NextResponse.json(
+      { error: 'Unsupported download format.' },
+      { status: 400 },
+    );
+  }
 
   try {
     const job = await prisma.searchJob.findFirst({
@@ -158,6 +174,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
           },
           select: {
             id: true,
+            outputType: true,
+            storagePath: true,
+            mimeType: true,
           },
         },
       },
@@ -167,7 +186,46 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Job not found.' }, { status: 404 });
     }
 
-    if (job.jobOutputs.length === 0) {
+    if (format === 'xlsx') {
+      const workbookOutput = job.jobOutputs.find(
+        (jobOutput) => jobOutput.outputType === 'xlsx',
+      );
+
+      if (!workbookOutput?.storagePath) {
+        return NextResponse.json(
+          { error: 'Download is not ready yet.' },
+          { status: 409 },
+        );
+      }
+
+      const workbookBytes = await readFile(workbookOutput.storagePath);
+
+      await prisma.auditEvent.create({
+        data: {
+          userId: auth.userId,
+          jobId: job.id,
+          eventType: 'xlsx_downloaded',
+          eventPayload: {
+            outputType: 'xlsx',
+            storagePath: workbookOutput.storagePath,
+          },
+        },
+      });
+
+      return new NextResponse(workbookBytes, {
+        status: 200,
+        headers: {
+          'Content-Type': workbookOutput.mimeType ?? WORKBOOK_MIME_TYPE,
+          'Content-Disposition': `attachment; filename="job-${job.id}.xlsx"`,
+        },
+      });
+    }
+
+    const csvOutput = job.jobOutputs.find(
+      (jobOutput) => jobOutput.outputType === 'csv',
+    );
+
+    if (!csvOutput) {
       return NextResponse.json(
         { error: 'Download is not ready yet.' },
         { status: 409 },
@@ -182,6 +240,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         jobId: job.id,
         eventType: 'csv_downloaded',
         eventPayload: {
+          outputType: 'csv',
           fieldCount: job.fieldExtractions.length,
         },
       },
