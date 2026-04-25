@@ -8,6 +8,7 @@ describe('buildWorkbookBuffer', () => {
   it('creates all expected sheets and HTA Results headers', async () => {
     const buffer = await buildWorkbookBuffer({
       htaResults: [],
+      trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
 
@@ -30,6 +31,15 @@ describe('buildWorkbookBuffer', () => {
     ]);
 
     expect(workbook.getWorksheet('Trial Results')).toBeDefined();
+    expect(workbook.getWorksheet('Trial Results')?.getRow(1).values).toEqual([
+      ,
+      'Trial Name',
+      'Phase',
+      'Population',
+      'Comparator',
+      'Primary Endpoint',
+      'Result Summary',
+    ]);
     expect(workbook.getWorksheet('NMA Results')).toBeDefined();
     expect(workbook.getWorksheet('Economic Evaluation')).toBeDefined();
     expect(workbook.getWorksheet('Guideline Results')).toBeDefined();
@@ -53,6 +63,7 @@ describe('buildWorkbookBuffer', () => {
           restrictionDetails: 'Restricted to mock criteria',
         },
       ],
+      trialResults: [],
     });
     const workbook = new ExcelJS.Workbook();
 
@@ -67,6 +78,36 @@ describe('buildWorkbookBuffer', () => {
       'Recommended',
       '2026-04-25',
       'Restricted to mock criteria',
+    ]);
+  });
+
+  it('writes one Trial Results row', async () => {
+    const buffer = await buildWorkbookBuffer({
+      htaResults: [],
+      trialResults: [
+        {
+          trialName: 'MOCK-301',
+          phase: 'Phase 3',
+          population: 'Adults with mock condition',
+          comparator: 'Standard of care',
+          primaryEndpoint: 'Progression-free survival',
+          resultSummary: 'Mock drug improved the primary endpoint.',
+        },
+      ],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const trialResultsSheet = workbook.getWorksheet('Trial Results');
+    expect(trialResultsSheet?.getRow(2).values).toEqual([
+      ,
+      'MOCK-301',
+      'Phase 3',
+      'Adults with mock condition',
+      'Standard of care',
+      'Progression-free survival',
+      'Mock drug improved the primary endpoint.',
     ]);
   });
 });

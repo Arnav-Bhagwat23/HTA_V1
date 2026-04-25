@@ -1,10 +1,12 @@
 import ExcelJS from 'exceljs';
 
 import type { HtaResultsRow } from '../schema/hta-results.schema';
+import type { TrialResultsRow } from '../schema/trial-results.schema';
 import { WORKBOOK_COLUMNS, WORKBOOK_SHEETS } from './workbook-schema';
 
 export interface WorkbookBuildInput {
   htaResults: HtaResultsRow[];
+  trialResults: TrialResultsRow[];
 }
 
 export const buildWorkbookBuffer = async (
@@ -23,6 +25,12 @@ export const buildWorkbookBuffer = async (
 
     if (sheetName === 'HTA Results') {
       for (const row of input.htaResults) {
+        worksheet.addRow(row);
+      }
+    }
+
+    if (sheetName === 'Trial Results') {
+      for (const row of input.trialResults) {
         worksheet.addRow(row);
       }
     }
