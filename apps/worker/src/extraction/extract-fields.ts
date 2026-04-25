@@ -1,6 +1,12 @@
 import type { ExtractionResult, ParsedDocument } from '@hta/shared';
 
 import { extractHtaResults } from '../llm/extract-hta-results';
+import { extractTrialResults } from '../llm/extract-trial-results';
+import type { StructuredExtractionOutput } from './structured-extraction-artifact';
+
+export interface StructuredExtractionResult extends ExtractionResult {
+  structuredOutput: StructuredExtractionOutput;
+}
 
 const extractDecisionValue = (rawText: string): string | null => {
   if (/\bnot recommended\b/i.test(rawText)) {
@@ -43,17 +49,27 @@ const buildEvidence = (parsedDocument: ParsedDocument) => {
 
 export const extractFieldsFromParsedDocument = async (
   parsedDocument: ParsedDocument,
-): Promise<ExtractionResult> => {
+): Promise<StructuredExtractionResult> => {
   const { evidence, hasParsedText } = buildEvidence(parsedDocument);
   const fallbackDecisionValue = extractDecisionValue(parsedDocument.rawText);
 
   let llmDecisionValue: string | null = null;
+  let htaResults = [] as StructuredExtractionOutput['htaResults'];
+  let trialResults = [] as StructuredExtractionOutput['trialResults'];
 
   try {
     const llmResult = await extractHtaResults(parsedDocument);
     llmDecisionValue = llmResult.htaDecision;
+    htaResults = [llmResult];
   } catch {
     llmDecisionValue = null;
+  }
+
+  try {
+    const trialResult = await extractTrialResults(parsedDocument);
+    trialResults = [trialResult];
+  } catch {
+    trialResults = [];
   }
 
   const decisionValue = llmDecisionValue ?? fallbackDecisionValue;
@@ -91,5 +107,9 @@ export const extractFieldsFromParsedDocument = async (
     ],
     warnings: [],
     confidence: 1,
+    structuredOutput: {
+      htaResults,
+      trialResults,
+    },
   };
 };

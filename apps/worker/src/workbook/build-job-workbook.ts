@@ -9,6 +9,7 @@ import type { HtaResultsRow } from '../schema/hta-results.schema';
 import type { MissingFieldsWarningsRow } from '../schema/missing-fields-warnings.schema';
 import type { RunMetadataRow } from '../schema/run-metadata.schema';
 import type { SourceUrlsRow } from '../schema/source-urls.schema';
+import { loadStructuredExtractionArtifact } from '../extraction/structured-extraction-artifact';
 import { buildWorkbookBuffer } from './workbook-builder';
 
 export interface JobWorkbookResult {
@@ -385,18 +386,23 @@ export const buildJobWorkbook = async (
     searchJobId,
   );
   const storagePath = path.join(outputDirectory, 'hta-output.xlsx');
+  const structuredExtractionArtifact =
+    await loadStructuredExtractionArtifact(searchJobId);
   const workbookBuffer = await buildWorkbookBuffer({
     documentsConsidered: mapJobToDocumentsConsideredRows(job),
     economicEvaluation: [],
     extractionAuditLog: mapJobToExtractionAuditLogRows(job),
     fieldProvenance: mapJobToFieldProvenanceRows(job),
     guidelineResults: [],
-    htaResults: [mapJobToHtaResultsRow(job)],
+    htaResults:
+      structuredExtractionArtifact?.htaResults.length
+        ? structuredExtractionArtifact.htaResults
+        : [mapJobToHtaResultsRow(job)],
     missingFieldsWarnings: mapJobToMissingFieldsWarningsRows(job),
     nmaResults: [],
     runMetadata: mapJobToRunMetadataRows(job),
     sourceUrls: mapJobToSourceUrlsRows(job),
-    trialResults: [],
+    trialResults: structuredExtractionArtifact?.trialResults ?? [],
   });
 
   await mkdir(outputDirectory, { recursive: true });

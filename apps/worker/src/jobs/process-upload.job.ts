@@ -5,6 +5,7 @@ import type { ParsedDocument } from '@hta/shared';
 import { Job } from 'bullmq';
 
 import { extractFieldsFromParsedDocument } from '../extraction/extract-fields';
+import { persistStructuredExtractionArtifact } from '../extraction/structured-extraction-artifact';
 import { prisma } from '../lib/prisma';
 import { parsePdfBuffer } from '../parsing/pdf-parser';
 import { buildJobWorkbook } from '../workbook/build-job-workbook';
@@ -199,6 +200,11 @@ const processUploadedDocument = async (
   try {
     const parsedDocument = await buildParsedUploadedDocument(uploadedDocument);
     const extractionResult = await extractFieldsFromParsedDocument(parsedDocument);
+
+    await persistStructuredExtractionArtifact(
+      searchJobId,
+      extractionResult.structuredOutput,
+    );
 
     await prisma.$transaction([
       prisma.uploadedDocument.update({

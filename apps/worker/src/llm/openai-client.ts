@@ -7,6 +7,18 @@ const DEFAULT_STUB_RESPONSE = JSON.stringify({
   restrictionDetails: null,
 });
 
+const STRUCTURED_STUB_RESPONSES: Record<string, string> = {
+  hta_results: DEFAULT_STUB_RESPONSE,
+  trial_results: JSON.stringify({
+    trialName: 'MOCK-301',
+    phase: 'Phase 3',
+    population: 'Adults with mock condition',
+    comparator: 'Standard of care',
+    primaryEndpoint: 'Progression-free survival',
+    resultSummary: 'Mock trial showed benefit in the primary endpoint.',
+  }),
+};
+
 const getLlmMode = (): string =>
   process.env.LLM_MODE?.trim() || 'stub';
 
@@ -80,9 +92,8 @@ export const callOpenAIStructured = async (
 
   if (mode === 'stub') {
     void prompt;
-    void schemaName;
     void jsonSchema;
-    return DEFAULT_STUB_RESPONSE;
+    return STRUCTURED_STUB_RESPONSES[schemaName] ?? DEFAULT_STUB_RESPONSE;
   }
 
   if (mode === 'openai') {

@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 
+import ExcelJS from 'exceljs';
 import {
   JobMode,
   JobStatus,
@@ -97,6 +99,7 @@ describe('processSearchJob AU fixture path', () => {
             select: {
               outputType: true,
               isDownloadable: true,
+              storagePath: true,
             },
           },
         },
@@ -139,13 +142,31 @@ describe('processSearchJob AU fixture path', () => {
           {
             outputType: 'csv',
             isDownloadable: true,
+            storagePath: null,
           },
           {
             outputType: 'xlsx',
             isDownloadable: true,
+            storagePath: expect.any(String),
           },
         ]),
       );
+
+      const workbookOutput = completedJob?.jobOutputs.find(
+        (output) => output.outputType === 'xlsx',
+      );
+
+      expect(workbookOutput?.storagePath).toBeTruthy();
+
+      const workbookBuffer = await readFile(workbookOutput?.storagePath as string);
+      const workbook = new ExcelJS.Workbook();
+
+      await workbook.xlsx.load(workbookBuffer);
+
+      const trialResultsSheet = workbook.getWorksheet('Trial Results');
+
+      expect(trialResultsSheet?.getRow(2).getCell(1).value).toBe('MOCK-301');
+      expect(trialResultsSheet?.getRow(2).getCell(2).value).toBe('Phase 3');
     } finally {
       await prisma.user.delete({
         where: { id: user.id },

@@ -37,6 +37,17 @@ describe('extractFieldsFromParsedDocument', () => {
       snippet: 'PBAC Public Summary Document. The medicine is recommended for listing.',
       publishedAt: '2026-04-24T00:00:00.000Z',
     });
+    expect(result.structuredOutput.htaResults).toHaveLength(1);
+    expect(result.structuredOutput.trialResults).toEqual([
+      {
+        trialName: 'MOCK-301',
+        phase: 'Phase 3',
+        population: 'Adults with mock condition',
+        comparator: 'Standard of care',
+        primaryEndpoint: 'Progression-free survival',
+        resultSummary: 'Mock trial showed benefit in the primary endpoint.',
+      },
+    ]);
   });
 
   it('marks text as unavailable when parsed text is blank', async () => {
@@ -65,6 +76,7 @@ describe('extractFieldsFromParsedDocument', () => {
       confidence: null,
     });
     expect(result.fields[0].evidence[0].snippet).toBeNull();
+    expect(result.structuredOutput.trialResults).toHaveLength(1);
   });
 
   it('prefers more specific negative and deferred decision phrases', async () => {

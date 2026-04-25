@@ -76,6 +76,26 @@ describe('callOpenAIStructured', () => {
     );
   });
 
+  it('stub mode returns deterministic Trial Results JSON', async () => {
+    process.env.LLM_MODE = 'stub';
+    const { callOpenAIStructured } = await import('./openai-client');
+
+    await expect(
+      callOpenAIStructured('test prompt', 'trial_results', {
+        type: 'object',
+      }),
+    ).resolves.toBe(
+      JSON.stringify({
+        trialName: 'MOCK-301',
+        phase: 'Phase 3',
+        population: 'Adults with mock condition',
+        comparator: 'Standard of care',
+        primaryEndpoint: 'Progression-free survival',
+        resultSummary: 'Mock trial showed benefit in the primary endpoint.',
+      }),
+    );
+  });
+
   it('missing API key throws in openai mode', async () => {
     process.env.LLM_MODE = 'openai';
     process.env.OPENAI_EXTRACTION_MODEL = 'gpt-test';

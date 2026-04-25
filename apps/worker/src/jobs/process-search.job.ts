@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 
 import { getAdapterBySourceKey } from '../adapters/registry';
 import { extractFieldsFromParsedDocument } from '../extraction/extract-fields';
+import { persistStructuredExtractionArtifact } from '../extraction/structured-extraction-artifact';
 import { prisma } from '../lib/prisma';
 import { normalizeQueryWithFallback } from '../normalizer/normalize-query';
 import { parsePdfDocument } from '../parsing/pdf-parser';
@@ -239,6 +240,11 @@ const executeRoutedSources = async (
     });
 
     const extractionResult = await extractFieldsFromParsedDocument(parsedDocument);
+
+    await persistStructuredExtractionArtifact(
+      searchJobId,
+      extractionResult.structuredOutput,
+    );
 
     await prisma.fieldExtraction.createMany({
       data: extractionResult.fields.map((field) => {
