@@ -6,7 +6,7 @@
     "seed": "dotenv -e .env -- tsx prisma/seed.ts"
   },
   "scripts": {
-    "infra:up": "docker compose up -d postgres redis",
+    "infra:up": "node scripts/ensure-docker.mjs && docker compose up -d postgres redis",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f postgres redis",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
