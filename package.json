@@ -9,6 +9,7 @@
     "infra:up": "docker compose up -d postgres redis",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f postgres redis",
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "prisma:seed": "dotenv -e .env -- tsx prisma/seed.ts",
     "web": "next dev apps/web",
