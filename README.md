@@ -2,27 +2,75 @@
 
 HTA_V1 is a monorepo for a Health Technology Assessment landscaping application.
 
-The repo is being built as a monolith-plus-worker system:
+`v0.2.0` is the current handoff release. It proves both required product branches:
+- automatic retrieval/extraction for every supported automatic country
+- manual upload/extraction for unsupported geographies
+
+The repo is structured as a monolith-plus-worker system:
 - `apps/web` owns API routes, auth, and user-facing job access
 - `apps/worker` owns async job processing
 - `packages/shared` holds shared contracts used by both sides
 - `prisma` defines the database model and migrations
 
+## v0.2.0 Summary
+
+What is proven in this release:
+- all 7 supported automatic countries are covered by adapters:
+  - `AU` / `PBAC`
+  - `UK` / `NICE`
+  - `DE` / `G-BA`
+  - `FR` / `HAS`
+  - `IT` / `AIFA`
+  - `ES` / `AEMPS`
+  - `JP` / `Japan HTA`
+- manual upload path works end to end
+- async queue + worker flow works
+- preview and CSV output are driven from persisted state
+- worker integration tests cover every supported automatic geography
+- test suite currently passes with `115` tests
+
+## Supported Countries
+
+### Automatic countries
+
+These geographies are currently treated as supported automatic countries:
+
+| Geography | Source |
+| --- | --- |
+| `AU` | `PBAC` |
+| `UK` | `NICE` |
+| `DE` | `G-BA` |
+| `FR` | `HAS` |
+| `IT` | `AIFA` |
+| `ES` | `AEMPS` |
+| `JP` | `Japan HTA` |
+
+### Unsupported geographies
+
+Any geography that resolves to `OTHER` follows the manual-upload branch:
+
+1. search normalizes geography to `OTHER`
+2. worker marks the job `PARTIAL`
+3. job requires manual upload
+4. user uploads one or more documents
+5. upload worker parses and extracts from those uploaded files
+6. preview and CSV are built from uploaded-document-backed extractions
+
+This is the current fallback rule for non-supported countries.
+
 ## What Works Today
 
-Two required product branches now exist.
+### 1. Automatic path
 
-### 1. Automatic AU Path
-
-The automatic Australia (`AU`) slice works end to end:
+The automatic path works end to end for all supported automatic countries:
 
 1. authenticated user submits a search
 2. `POST /api/search` creates a `SearchJob`
 3. the job is enqueued with BullMQ/Redis
 4. worker consumes the job
 5. query normalization runs
-6. supported geography routes to PBAC
-7. PBAC retrieval returns a selected document through a fixture/live boundary
+6. supported geography routes to exactly one source plan
+7. adapter returns a selected document through a fixture/live boundary
 8. PDF parsing runs through `parsePdfDocument(...)`
 9. extraction derives persisted fields including:
    - `source_document_title`
@@ -35,9 +83,9 @@ The automatic Australia (`AU`) slice works end to end:
    - `JobOutput`
 11. status, preview, and CSV download APIs read from persisted state
 
-### 2. Manual Upload Path
+### 2. Manual upload path
 
-The manual-upload branch is now wired structurally:
+The manual-upload branch is also wired end to end:
 
 1. authenticated user submits upload metadata or multipart files to `POST /api/uploads`
 2. `UploadedDocument` rows are created for a user-owned job
@@ -50,51 +98,100 @@ The manual-upload branch is now wired structurally:
    - `JobOutput`
 7. upload-processing audit events are written
 
-This means the repo now proves both core product branches structurally:
-- automatic retrieval/extraction
-- manual upload/extraction
-
 ## Proven Example Queries
 
-Two automatic-country example queries are now proven through the worker integration path:
+These are concise example queries that currently flow through the automatic worker path:
 
-### AU / PBAC example
-
-Example query:
+### AU / PBAC
 
 ```text
 Mock drug general indication Australia
 ```
 
-Expected flow/output:
+Expected outcome:
 - geography normalizes to `AU`
 - routing selects `pbac`
-- PBAC fixture/live boundary returns a selected document
-- parsing and extraction run
-- persisted fields include:
-  - `source_document_title`
-  - `document_text_available`
-  - `hta_decision`
-- CSV output becomes downloadable
+- selected document comes from PBAC
+- persisted fields include `hta_decision`
+- CSV becomes downloadable
 
-### UK / NICE example
-
-Example query:
+### UK / NICE
 
 ```text
 Mock drug general indication United Kingdom
 ```
 
-Expected flow/output:
+Expected outcome:
 - geography normalizes to `UK`
 - routing selects `nice`
-- NICE fixture/live boundary returns a selected document
-- parsing and extraction run
-- persisted fields include:
-  - `source_document_title`
-  - `document_text_available`
-  - `hta_decision`
-- CSV output becomes downloadable
+- selected document comes from NICE
+- persisted fields include `hta_decision`
+- CSV becomes downloadable
+
+### DE / G-BA
+
+```text
+Mock drug general indication Germany
+```
+
+Expected outcome:
+- geography normalizes to `DE`
+- routing selects `gba`
+- selected document comes from G-BA
+- persisted fields include `hta_decision`
+- CSV becomes downloadable
+
+### FR / HAS
+
+```text
+Mock drug general indication France
+```
+
+Expected outcome:
+- geography normalizes to `FR`
+- routing selects `has`
+- selected document comes from HAS
+- persisted fields include `hta_decision`
+- CSV becomes downloadable
+
+### IT / AIFA
+
+```text
+Mock drug general indication Italy
+```
+
+Expected outcome:
+- geography normalizes to `IT`
+- routing selects `aifa`
+- selected document comes from AIFA
+- persisted fields include `hta_decision`
+- CSV becomes downloadable
+
+### ES / AEMPS
+
+```text
+Mock drug general indication Spain
+```
+
+Expected outcome:
+- geography normalizes to `ES`
+- routing selects `aemps`
+- selected document comes from AEMPS
+- persisted fields include `hta_decision`
+- CSV becomes downloadable
+
+### JP / Japan HTA
+
+```text
+Mock drug general indication Japan
+```
+
+Expected outcome:
+- geography normalizes to `JP`
+- routing selects `japan`
+- selected document comes from Japan HTA
+- persisted fields include `hta_decision`
+- CSV becomes downloadable
 
 ## Current Boundaries
 
@@ -108,7 +205,7 @@ POST /api/search
   -> normalizeQuery(...)
   -> routeSourcePlans(...)
   -> adapter lookup
-  -> PBAC adapter returns SelectedDocument
+  -> source adapter returns SelectedDocument
   -> parsePdfDocument(...)
   -> extractFieldsFromParsedDocument(...)
   -> worker persists document, fields, and downloadable output
@@ -127,11 +224,6 @@ POST /api/uploads
   -> worker persists upload-linked fields and downloadable output
 ```
 
-The main replaceable boundaries are now explicit:
-- PBAC retrieval has `fixture` and `live` modes
-- PDF parsing has `mock` and `live` modes
-- extraction is still lightweight/rule-based, but no longer fully placeholder logic
-
 ## Repo Structure
 
 ```text
@@ -143,7 +235,7 @@ apps/
 prisma/
 ```
 
-Important current files:
+Important files:
 
 - `packages/shared/src/index.ts`
 - `prisma/schema.prisma`
@@ -157,8 +249,7 @@ Important current files:
 - `apps/worker/src/jobs/process-upload.job.ts`
 - `apps/worker/src/normalizer/normalize-query.ts`
 - `apps/worker/src/routing/source-router.ts`
-- `apps/worker/src/adapters/pbac.adapter.ts`
-- `apps/worker/src/adapters/pbac.parser.ts`
+- `apps/worker/src/adapters/`
 - `apps/worker/src/parsing/pdf-parser.ts`
 - `apps/worker/src/parsing/pdf-text-extractor.ts`
 - `apps/worker/src/extraction/extract-fields.ts`
@@ -166,21 +257,17 @@ Important current files:
 ## Shared Contracts
 
 `packages/shared` currently defines:
-
 - normalized query contract
-- job status and mode contracts
 - supported geographies and manual-upload rule
 - warning codes
 - selected/parsed document contracts
 - extraction and preview contracts
-- search/upload/preview schemas
-- shared queue name and Redis config helpers
-
-This package is consumed as raw TypeScript source inside the monorepo through `@hta/shared`.
+- search/upload schemas
+- shared queue names and Redis config helpers
 
 ## Persistence Layer
 
-The Prisma schema already includes the core tables for the v3 architecture:
+The Prisma schema includes the core tables for the v3 architecture:
 
 - `User`
 - `Session`
@@ -219,11 +306,9 @@ npm run prisma:seed
 
 ### Environment
 
-The repo expects `DATABASE_URL` for Prisma and `REDIS_URL` for BullMQ.
+Copy `.env.example` to `.env`.
 
-Copy `.env.example` to `.env` for local development.
-
-Example values:
+Example local values:
 
 ```bash
 DATABASE_URL=postgresql://postgres:postgres@localhost:5433/hta_v1
@@ -234,12 +319,14 @@ Optional worker boundary flags:
 
 ```bash
 PBAC_RETRIEVAL_MODE=fixture
+NICE_RETRIEVAL_MODE=fixture
+GBA_RETRIEVAL_MODE=fixture
+HAS_RETRIEVAL_MODE=fixture
+AIFA_RETRIEVAL_MODE=fixture
+AEMPS_RETRIEVAL_MODE=fixture
+JAPAN_HTA_RETRIEVAL_MODE=fixture
 PDF_PARSER_MODE=mock
 ```
-
-Supported current values:
-- `PBAC_RETRIEVAL_MODE=fixture|live`
-- `PDF_PARSER_MODE=mock|live`
 
 The seed script also supports:
 
@@ -250,23 +337,18 @@ ADMIN_USER_EMAIL
 ADMIN_USER_PASSWORD
 ```
 
-If unset, local dev defaults are used:
-
-- standard: `user@hta.local`
-- admin: `admin@hta.local`
-
 ### Predictable Local Run
 
-One simple local startup sequence is:
-
 ```bash
+npm install
+cp .env.example .env
 npm run infra:up
-npm run prisma:validate
+npx prisma migrate deploy --schema prisma/schema.prisma
 npm run prisma:seed
 npm run worker
 ```
 
-Then start the web/API process in a separate terminal:
+Then in a separate terminal:
 
 ```bash
 npm run web
@@ -286,20 +368,16 @@ Run seed:
 npm run prisma:seed
 ```
 
-Prisma 6.x is pinned intentionally so the repo can keep the classic `schema.prisma` datasource config during scaffolding.
-
 ## Test Coverage
 
 The repo now includes worker-focused tests covering:
-
 - `normalize-query`
 - `source-router`
 - `extract-fields`
 - `pdf-parser`
 - `http-client`
-- `pbac.adapter`
-- `pbac.parser`
-- AU search job integration path
+- every automatic-country adapter/parser pair
+- every supported automatic-country worker integration path
 - manual upload integration path
 
 Run them with:
@@ -308,19 +386,23 @@ Run them with:
 npm test
 ```
 
-## Current Limitations
+Current status:
+- `21` test files
+- `115` passing tests
+
+## Known Limitations
 
 This is still a scaffolded but working prototype. Current limitations include:
 
-- PBAC live retrieval only has first-pass document discovery, not full scraping robustness
-- the default AU path still uses mock parser mode unless `PDF_PARSER_MODE=live` is set
-- extraction is still narrow and rule-based rather than source-specific
-- preview/download are API handlers; there is not yet a full user-facing web app shell
-- upload route and upload worker are wired, but broader upload UX and retry/orchestration are still minimal
+- retrieval is still split between `fixture` and `live` boundaries, and live-mode robustness is still early
+- extraction is still lightweight and rule-based rather than source-specific/NLP-driven
+- automatic adapters currently share a generic latest-PDF discovery strategy rather than source-specialized parsing
+- local development expects Docker Desktop or equivalent local infra
+- preview/download are API handlers; there is not yet a polished end-user web UI
 
 ## Design Rules
 
-The repo is intentionally following these rules:
+The repo intentionally follows these rules:
 
 - web API stays thin
 - worker owns normalization, routing, retrieval, parsing, extraction, and output state
@@ -329,25 +411,15 @@ The repo is intentionally following these rules:
 - automatic extraction uses only the selected latest document
 - historical backfill is out of scope
 
-## Next Likely Steps
-
-Near-term next work is likely to be one of:
-
-- harden live PBAC retrieval and discovery parsing
-- make `PDF_PARSER_MODE=live` the exercised default path once stable
-- expand extraction rules beyond the first `hta_decision` heuristic
-- add upload queue producer/consumer integration tests
-- add stronger app-level route/integration tests
-
 ## Status Summary
 
-This repo is no longer just architecture scaffolding.
+This repo is no longer just scaffolding.
 
-It already demonstrates a real persisted async job flow with:
+At `v0.2.0`, it demonstrates a real persisted async job flow with:
 - queueing
 - worker execution
 - source routing
-- selected document persistence
+- automatic-country adapters for all supported geographies
 - uploaded document persistence
 - parsed-text boundary
 - text-driven extraction boundary
