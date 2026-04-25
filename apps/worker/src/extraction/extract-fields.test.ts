@@ -59,6 +59,16 @@ describe('extractFieldsFromParsedDocument', () => {
           'Considered cost-effective at current threshold.',
       },
     ]);
+    expect(result.structuredOutput.guidelineResults).toEqual([
+      {
+        guidelineName: 'Mock Oncology Guideline 2026',
+        issuingBody: 'Mock Society',
+        recommendation: 'Recommended in selected patients',
+        population: 'Adults with mock condition',
+        lineOfTherapy: 'Second line',
+        notes: 'Use after progression on first-line therapy.',
+      },
+    ]);
     expect(result.structuredOutput.trialResults).toEqual([
       {
         trialName: 'MOCK-301',
@@ -98,6 +108,7 @@ describe('extractFieldsFromParsedDocument', () => {
     });
     expect(result.fields[0].evidence[0].snippet).toBeNull();
     expect(result.structuredOutput.economicEvaluation).toHaveLength(1);
+    expect(result.structuredOutput.guidelineResults).toHaveLength(1);
     expect(result.structuredOutput.nmaResults).toHaveLength(1);
     expect(result.structuredOutput.trialResults).toHaveLength(1);
   });

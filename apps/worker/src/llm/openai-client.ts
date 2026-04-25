@@ -17,6 +17,14 @@ const STRUCTURED_STUB_RESPONSES: Record<string, string> = {
     costEffectivenessConclusion:
       'Considered cost-effective at current threshold.',
   }),
+  guideline_results: JSON.stringify({
+    guidelineName: 'Mock Oncology Guideline 2026',
+    issuingBody: 'Mock Society',
+    recommendation: 'Recommended in selected patients',
+    population: 'Adults with mock condition',
+    lineOfTherapy: 'Second line',
+    notes: 'Use after progression on first-line therapy.',
+  }),
   hta_results: DEFAULT_STUB_RESPONSE,
   trial_results: JSON.stringify({
     trialName: 'MOCK-301',

@@ -137,6 +137,26 @@ describe('callOpenAIStructured', () => {
     );
   });
 
+  it('stub mode returns deterministic Guideline Results JSON', async () => {
+    process.env.LLM_MODE = 'stub';
+    const { callOpenAIStructured } = await import('./openai-client');
+
+    await expect(
+      callOpenAIStructured('test prompt', 'guideline_results', {
+        type: 'object',
+      }),
+    ).resolves.toBe(
+      JSON.stringify({
+        guidelineName: 'Mock Oncology Guideline 2026',
+        issuingBody: 'Mock Society',
+        recommendation: 'Recommended in selected patients',
+        population: 'Adults with mock condition',
+        lineOfTherapy: 'Second line',
+        notes: 'Use after progression on first-line therapy.',
+      }),
+    );
+  });
+
   it('missing API key throws in openai mode', async () => {
     process.env.LLM_MODE = 'openai';
     process.env.OPENAI_EXTRACTION_MODEL = 'gpt-test';

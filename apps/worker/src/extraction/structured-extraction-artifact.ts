@@ -2,12 +2,14 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { EconomicEvaluationRow } from '../schema/economic-evaluation.schema';
+import type { GuidelineResultsRow } from '../schema/guideline-results.schema';
 import type { HtaResultsRow } from '../schema/hta-results.schema';
 import type { NmaResultsRow } from '../schema/nma-results.schema';
 import type { TrialResultsRow } from '../schema/trial-results.schema';
 
 export interface StructuredExtractionOutput {
   economicEvaluation: EconomicEvaluationRow[];
+  guidelineResults: GuidelineResultsRow[];
   htaResults: HtaResultsRow[];
   nmaResults: NmaResultsRow[];
   trialResults: TrialResultsRow[];
@@ -15,6 +17,7 @@ export interface StructuredExtractionOutput {
 
 const EMPTY_STRUCTURED_EXTRACTION_OUTPUT: StructuredExtractionOutput = {
   economicEvaluation: [],
+  guidelineResults: [],
   htaResults: [],
   nmaResults: [],
   trialResults: [],
@@ -40,6 +43,9 @@ export const loadStructuredExtractionArtifact = async (
     return {
       economicEvaluation: Array.isArray(parsed.economicEvaluation)
         ? parsed.economicEvaluation
+        : [],
+      guidelineResults: Array.isArray(parsed.guidelineResults)
+        ? parsed.guidelineResults
         : [],
       htaResults: Array.isArray(parsed.htaResults) ? parsed.htaResults : [],
       nmaResults: Array.isArray(parsed.nmaResults) ? parsed.nmaResults : [],
@@ -70,6 +76,10 @@ export const persistStructuredExtractionArtifact = async (
     economicEvaluation: [
       ...existingOutput.economicEvaluation,
       ...output.economicEvaluation,
+    ],
+    guidelineResults: [
+      ...existingOutput.guidelineResults,
+      ...output.guidelineResults,
     ],
     htaResults:
       output.htaResults.length > 0

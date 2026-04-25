@@ -393,7 +393,7 @@ export const buildJobWorkbook = async (
     economicEvaluation: structuredExtractionArtifact?.economicEvaluation ?? [],
     extractionAuditLog: mapJobToExtractionAuditLogRows(job),
     fieldProvenance: mapJobToFieldProvenanceRows(job),
-    guidelineResults: [],
+    guidelineResults: structuredExtractionArtifact?.guidelineResults ?? [],
     htaResults:
       structuredExtractionArtifact?.htaResults.length
         ? structuredExtractionArtifact.htaResults
