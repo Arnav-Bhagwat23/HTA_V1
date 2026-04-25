@@ -4,6 +4,7 @@ afterEach(() => {
   delete process.env.LLM_MODE;
   delete process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_EXTRACTION_MODEL;
+  delete process.env.OPENAI_NORMALIZATION_MODEL;
   vi.restoreAllMocks();
   vi.resetModules();
 });
@@ -167,6 +168,20 @@ describe('callOpenAIStructured', () => {
         type: 'object',
       }),
     ).rejects.toThrow('OPENAI_API_KEY is required when LLM_MODE=openai.');
+  });
+
+  it('uses the normalization model requirement for normalized queries', async () => {
+    process.env.LLM_MODE = 'openai';
+    process.env.OPENAI_API_KEY = 'test-key';
+    const { callOpenAIStructured } = await import('./openai-client');
+
+    await expect(
+      callOpenAIStructured('test prompt', 'normalized_query', {
+        type: 'object',
+      }),
+    ).rejects.toThrow(
+      'OPENAI_NORMALIZATION_MODEL is required when LLM_MODE=openai.',
+    );
   });
 
   it('unsupported mode throws', async () => {

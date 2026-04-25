@@ -54,16 +54,24 @@ const STRUCTURED_STUB_RESPONSES: Record<string, string> = {
 const getLlmMode = (): string =>
   process.env.LLM_MODE?.trim() || 'stub';
 
-const resolveOpenAIConfig = () => {
+type OpenAIPurpose = 'extraction' | 'normalization';
+
+const getModelEnvName = (purpose: OpenAIPurpose): string =>
+  purpose === 'normalization'
+    ? 'OPENAI_NORMALIZATION_MODEL'
+    : 'OPENAI_EXTRACTION_MODEL';
+
+const resolveOpenAIConfig = (purpose: OpenAIPurpose) => {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
-  const model = process.env.OPENAI_EXTRACTION_MODEL?.trim();
+  const modelEnvName = getModelEnvName(purpose);
+  const model = process.env[modelEnvName]?.trim();
 
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY is required when LLM_MODE=openai.');
   }
 
   if (!model) {
-    throw new Error('OPENAI_EXTRACTION_MODEL is required when LLM_MODE=openai.');
+    throw new Error(`${modelEnvName} is required when LLM_MODE=openai.`);
   }
 
   return { apiKey, model };
@@ -88,7 +96,7 @@ export const callOpenAI = async (
   }
 
   if (mode === 'openai') {
-    const { apiKey, model } = resolveOpenAIConfig();
+    const { apiKey, model } = resolveOpenAIConfig('extraction');
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
@@ -129,7 +137,9 @@ export const callOpenAIStructured = async (
   }
 
   if (mode === 'openai') {
-    const { apiKey, model } = resolveOpenAIConfig();
+    const purpose =
+      schemaName === 'normalized_query' ? 'normalization' : 'extraction';
+    const { apiKey, model } = resolveOpenAIConfig(purpose);
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
