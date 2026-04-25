@@ -116,8 +116,17 @@ The manual-upload branch is also wired end to end:
 
 ### Workbook status
 
-- `HTA Results` is currently the first populated workbook sheet
-- remaining workbook sheets are scaffolded and ready for expansion
+- populated workbook sheets currently include:
+  - `HTA Results`
+  - `Field Provenance`
+  - `Documents Considered`
+  - `Extraction Audit Log`
+  - `Missing Fields & Warnings`
+  - `Run Metadata`
+  - `Source URLs`
+- `Trial Results`, `NMA Results`, `Economic Evaluation`, and `Guideline Results`
+  are scaffolded in the workbook schema and builder, but are not yet populated
+  from persisted extraction output
 
 ## Proven Example Queries
 
@@ -415,8 +424,8 @@ npm test
 ```
 
 Current status:
-- `27` test files
-- `135` passing tests
+- `31` test files
+- `161` passing tests
 
 ## Known Limitations
 
