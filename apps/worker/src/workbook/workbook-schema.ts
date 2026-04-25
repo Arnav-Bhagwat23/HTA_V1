@@ -37,7 +37,17 @@ export const WORKBOOK_COLUMNS: Record<WorkbookSheetName, WorkbookColumn[]> = {
     { key: 'resultSummary', header: 'Result Summary' },
   ],
   'NMA Results': [],
-  'Economic Evaluation': [],
+  'Economic Evaluation': [
+    { key: 'modelType', header: 'Model Type' },
+    { key: 'perspective', header: 'Perspective' },
+    { key: 'timeHorizon', header: 'Time Horizon' },
+    { key: 'comparator', header: 'Comparator' },
+    { key: 'icer', header: 'ICER' },
+    {
+      key: 'costEffectivenessConclusion',
+      header: 'Cost-Effectiveness Conclusion',
+    },
+  ],
   'Guideline Results': [],
   'Field Provenance': [],
   'Documents Considered': [],

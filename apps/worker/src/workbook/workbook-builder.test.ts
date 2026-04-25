@@ -7,6 +7,7 @@ import { WORKBOOK_SHEETS } from './workbook-schema';
 describe('buildWorkbookBuffer', () => {
   it('creates all expected sheets and HTA Results headers', async () => {
     const buffer = await buildWorkbookBuffer({
+      economicEvaluation: [],
       htaResults: [],
       trialResults: [],
     });
@@ -42,6 +43,15 @@ describe('buildWorkbookBuffer', () => {
     ]);
     expect(workbook.getWorksheet('NMA Results')).toBeDefined();
     expect(workbook.getWorksheet('Economic Evaluation')).toBeDefined();
+    expect(workbook.getWorksheet('Economic Evaluation')?.getRow(1).values).toEqual([
+      ,
+      'Model Type',
+      'Perspective',
+      'Time Horizon',
+      'Comparator',
+      'ICER',
+      'Cost-Effectiveness Conclusion',
+    ]);
     expect(workbook.getWorksheet('Guideline Results')).toBeDefined();
     expect(workbook.getWorksheet('Field Provenance')).toBeDefined();
     expect(workbook.getWorksheet('Documents Considered')).toBeDefined();
@@ -53,6 +63,7 @@ describe('buildWorkbookBuffer', () => {
 
   it('writes one HTA Results row', async () => {
     const buffer = await buildWorkbookBuffer({
+      economicEvaluation: [],
       htaResults: [
         {
           drugName: 'Mock drug',
@@ -83,6 +94,7 @@ describe('buildWorkbookBuffer', () => {
 
   it('writes one Trial Results row', async () => {
     const buffer = await buildWorkbookBuffer({
+      economicEvaluation: [],
       htaResults: [],
       trialResults: [
         {
@@ -108,6 +120,38 @@ describe('buildWorkbookBuffer', () => {
       'Standard of care',
       'Progression-free survival',
       'Mock drug improved the primary endpoint.',
+    ]);
+  });
+
+  it('writes one Economic Evaluation row', async () => {
+    const buffer = await buildWorkbookBuffer({
+      economicEvaluation: [
+        {
+          modelType: 'Partitioned survival model',
+          perspective: 'Payer',
+          timeHorizon: 'Lifetime',
+          comparator: 'Standard of care',
+          icer: '$45,000/QALY',
+          costEffectivenessConclusion:
+            'Considered cost-effective at current threshold.',
+        },
+      ],
+      htaResults: [],
+      trialResults: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+
+    await workbook.xlsx.load(buffer);
+
+    const economicEvaluationSheet = workbook.getWorksheet('Economic Evaluation');
+    expect(economicEvaluationSheet?.getRow(2).values).toEqual([
+      ,
+      'Partitioned survival model',
+      'Payer',
+      'Lifetime',
+      'Standard of care',
+      '$45,000/QALY',
+      'Considered cost-effective at current threshold.',
     ]);
   });
 });

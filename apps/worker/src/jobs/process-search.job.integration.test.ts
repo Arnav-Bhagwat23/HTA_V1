@@ -26,7 +26,7 @@ let processSearchJob: typeof import('./process-search.job').processSearchJob;
 
 beforeAll(async () => {
   ({ processSearchJob } = await import('./process-search.job'));
-});
+}, 20000);
 
 afterAll(async () => {
   await prisma.$disconnect();

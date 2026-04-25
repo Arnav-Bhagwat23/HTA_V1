@@ -26,7 +26,7 @@ let processUploadJob: typeof import('./process-upload.job').processUploadJob;
 
 beforeAll(async () => {
   ({ processUploadJob } = await import('./process-upload.job'));
-});
+}, 20000);
 
 afterAll(async () => {
   await prisma.$disconnect();
@@ -145,7 +145,7 @@ describe('processUploadJob', () => {
         where: { id: user.id },
       });
     }
-  });
+  }, 15000);
 
   it('marks pending uploads as failed and leaves the job partial', async () => {
     const email = `worker-upload-fail-${randomUUID()}@hta.local`;

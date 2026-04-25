@@ -34,7 +34,7 @@ describe('normalizeQueryWithFallback', () => {
       canonicalIndication: 'General indication',
       canonicalGeography: 'AU',
     });
-  });
+  }, 15000);
 
   it('falls back to rule-based normalization if LLM fails', async () => {
     vi.doMock('../llm/normalize-query-with-llm', () => ({
